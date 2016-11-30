@@ -1,0 +1,10 @@
+apiVersion: "nave.vessel/v1"
+kind: ServiceVessel
+metadata:
+  name: mariadb-vessel
+image: nave/centos-mariadb-vessel:latest
+vesselSpec:
+  configFile: "/var/lib/nave/configfiles/mariadb/galera.cnf"
+  action: deploy
+  dependencies: None
+  serviceName: mariadb
