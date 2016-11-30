@@ -22,7 +22,6 @@ class Vessel(object):
 
         self.template = self.data.get('vesselSpec')
         self.dependencies = self.template.get('dependencies')
-        self.name = self.template.get('serviceName')
 
         self.lifecycle_actions = ['deploy']
         self.action = self.template.get('action')

@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service Vessel class."""
+"""Service Vessel class"""
 
 from vessel import Vessel
 
@@ -19,19 +19,27 @@ class ServiceVessel(Vessel):
 
     def __init__(self, data):
         self.data = data
+
+        self.template = self.data.get('vesselSpec')
+        self.name = self.template.get('serviceName')
         super(ServiceVessel, self).__init__(data)
+
+    def _helm_client(self, *args):
+        helm_args = ''
+        if isinstance(args, list):
+            for arg in args:
+                helm_args += arg
+        else:
+            helm_args = ''.join(args)
+            helm_args = helm_args.split(' ')
+        subprocess.Popen(helm_args)
 
     def _database_action(self):
         """Register a service's user and password in the database"""
 
         pass
 
-    def _keystone_action(self):
-        """Register a service user and role in Keystone"""
-
-        pass
-
     def _run_helm_package(self):
         """Execute a Helm package for a service"""
 
-        pass
+        self._helm_client("helm install --name %s %s" % self.name, service)
