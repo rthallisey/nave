@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+metadata:
+  name: service-vessel.nave.vessel
+description: "Service Vessel"
+versions:
+- name: v1
