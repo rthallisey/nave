@@ -51,7 +51,7 @@ def main():
     if user_data.get('kind') == 'ServiceVessel':
         vessel_dict = {'mariadb': MariadbVessel(user_data)}
         service_ves = vessel_dict.get(service)
-        service_ves.deploy()
+        service_ves.do_action()
 
 if __name__ == '__main__':
     sys.exit(main())

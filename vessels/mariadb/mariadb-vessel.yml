@@ -5,6 +5,6 @@ metadata:
 image: nave/centos-mariadb-vessel:latest
 vesselSpec:
   configFile: "/var/lib/nave/configfiles/mariadb/galera.cnf"
-  action: deploy
+  action: recovery
   dependencies: None
   serviceName: mariadb

@@ -18,10 +18,6 @@ from vessel import Vessel
 class ServiceVessel(Vessel):
 
     def __init__(self, data):
-        self.data = data
-
-        self.template = self.data.get('vesselSpec')
-        self.name = self.template.get('serviceName')
         super(ServiceVessel, self).__init__(data)
 
     def _helm_client(self, *args):

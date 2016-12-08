@@ -19,21 +19,34 @@ from service_vessel import ServiceVessel
 class MariadbVessel(ServiceVessel):
 
     def __init__(self, data):
-        self.data = data
-        self.template = self.data.get('vesselSpec')
-        self.dependencies = self.template.get('dependencies')
-        self.name = self.template.get('serviceName')
-
-        self.lifecycle_operations = ['deploy, recovery']
-        self.operation = self.template.get('action')
+        self.lifecycle_actions = ['deploy', 'recovery']
         super(MariadbVessel, self).__init__(data)
 
     def _mariadb_recovery(self):
         """Workflow for recovering mariadb"""
 
+        # need to have one template/pod for each galera node with their
+        # own pv/pvc of /var/lib/mysql/grastate.dat
+
+        # read all volumes that hold /var/lib/mysql/grastate.dat
+        output, error = self._kube_client("kubectl exec mariadb cat "
+                                          "/var/lib/mysql/grastate.dat")
+        seqno = output
+        # look for the highest positive value
+        # run /etc/init.d/mysql start --wsrep-new-cluster on the highest seqno
+
         pass
 
-    def deploy(self):
-        self._database_action()
-        self._keystone_action()
+    def _deploy(self):
         self._run_helm_package()
+
+    def do_action(self):
+        if self.action in self.lifecycle_actions:
+            if self.action == 'deploy':
+                self._deploy()
+            elif self.action == 'recovery':
+                self._mariadb_recovery()
+        else:
+            print("%s is not a valid lifecycle action. "
+                  "Pick from the list of valid action: %s"
+                  % self.action, self.lifecycle_actions)

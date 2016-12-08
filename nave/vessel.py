@@ -22,9 +22,9 @@ class Vessel(object):
 
         self.template = self.data.get('vesselSpec')
         self.dependencies = self.template.get('dependencies')
-
-        self.lifecycle_actions = ['deploy']
         self.action = self.template.get('action')
+        self.name = self.template.get('serviceName')
+
         super(Vessel, self).__init__()
 
     def _kube_client(self, *args):
@@ -36,6 +36,10 @@ class Vessel(object):
             kubeargs = ''.join(args)
             kubeargs = kubeargs.split(' ')
         subprocess.Popen(kubeargs)
+
+        p = subprocess.Popen(kubeargs, stdout=subprocess.PIPE)
+        out, err = p.communicate()
+        return out, err
 
     def _user_action(self, *args, **kwargs):
         """Perform a user directed action.
@@ -72,6 +76,3 @@ class Vessel(object):
 
     def get_services(self):
         return self.services
-
-    def deploy(self):
-        self._workflow()
