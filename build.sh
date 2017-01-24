@@ -5,6 +5,7 @@ BUILD_ROOT=`dirname $ROOT`
 CONTAINER_DIR="${BUILD_ROOT}/containers"
 
 source "${BUILD_ROOT}/default-config.sh"
+source "${BUILD_ROOT}/create_configs.sh"
 
 CONTAINER_REG="nave/centos"
 TAG="${TAG:-latest}"
@@ -27,6 +28,8 @@ function build-templates {
 }
 
 for SERVICE in "$@"; do
+    templates-to-configs $CLUSTER_SIZE
+
     build-templates
     docker-build-cmd "${CONTAINER_DIR}/${SERVICE}"
 done
