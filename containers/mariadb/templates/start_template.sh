@@ -3,9 +3,9 @@
 function boostrap {
     mysqld_safe --wsrep-new-cluster &
 
-    mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
-    mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
-    mysqladmin -uroot -p "{{db_password}}" shutdown
+    mysql -u root --password="password" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'password' WITH GRANT OPTION;"
+    mysql -u root --password="password" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;"
+    mysqladmin -uroot -p "password" shutdown
 }
 
 if [[ "${!BOOTSTRAP[@]}" ]]; then
@@ -14,4 +14,5 @@ if [[ "${!BOOTSTRAP[@]}" ]]; then
     exit 0
 fi
 
+tail -f /var/log/mariadb/mariadb.log &
 /usr/bin/mysqld_safe
