@@ -12,7 +12,8 @@ RUN yum install -y MariaDB-Galera-server \
                    rsync \
                    galera \
                    socat \
-                   hostname
+                   hostname \
+                   expect
 
 RUN mkdir -p /var/log/mariadb \
     && touch /var/log/mariadb/mariadb.log \
@@ -21,6 +22,6 @@ RUN mkdir -p /var/log/mariadb \
     && rm -rf /var/lib/mysql
 
 COPY mariadb.conf /etc/my.cnf
-COPY start.sh .
+COPY start.sh security_reset.exp ./
 
 CMD ["./start.sh"]
