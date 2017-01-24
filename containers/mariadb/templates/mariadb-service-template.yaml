@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+spec:
+  ports:
+    - port: 3306
+      name: mariadb-{{count}}
+  selector:
+    service: mariadb-{{count}}
+metadata:
+   name: mariadb-{{count}}
+   namespace: "default"

@@ -1,0 +1,56 @@
+apiVersion: v1
+#apiVersion: apps/v1alpha1
+#kind: PetSet
+kind: ReplicationController
+spec:
+#  serviceName: "galera"
+  replicas: 1
+  selector:
+    service: mariadb-{{count}}
+  template:
+    metadata:
+      labels:
+        service: mariadb-{{count}}
+#      annotations:
+#        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: 172.16.35.13
+      containers:
+        - image: "kolla/centos-binary-mariadb:3.0.1"
+          name: main
+          volumeMounts:
+            - mountPath: /var/lib/kolla/config_files
+              name: mariadb-config
+            - mountPath: /var/lib/mysql
+              name: mariadb-persistent-storage
+          env:
+            - name: KOLLA_CONFIG_STRATEGY
+              value: "COPY_ALWAYS"
+            - name: DATABASE_PASSWORD
+              value: "EhgolE0E6NtamoYQsCrmnMWbvFTHGrza83Ddy0Ip"
+            - name: DB_ROOT_PASSWORD
+              value: "EhgolE0E6NtamoYQsCrmnMWbvFTHGrza83Ddy0Ip"
+              # valueFrom:
+              #   secretKeyRef:
+              #     name: database-password
+              #     key: password
+          ports:
+            - containerPort: 3306
+              name: mariadb-{{count}}
+            - containerPort: 4444
+              name: sst
+            - containerPort: 4567
+              name: replication
+            - containerPort: 4568
+              name: ist
+      volumes:
+        - name: mariadb-config
+          configMap:
+            name: mariadb-{{count}}
+        - name: mariadb-persistent-storage
+          persistentVolumeClaim:
+            claimName: mariadb-{{count}}
+metadata:
+   name: mariadb-{{count}}
+   namespace: "default"
