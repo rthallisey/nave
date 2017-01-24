@@ -13,7 +13,7 @@ function docker-build-cmd {
     echo "Building container for ${SERVICE}"
     local tag="${CONTAINER_REG}-${SERVICE}:${TAG}"
 
-    docker build -t tag $@
+    docker build -t $tag $@
 }
 
 function build-templates {
