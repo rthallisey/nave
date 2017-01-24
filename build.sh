@@ -23,6 +23,7 @@ function build-templates {
     sed -i "s/{{cluster_addresses}}/${CLUSTER_ADDRESSES}/g" "${CONTAINER_DIR}/${SERVICE}/${SERVICE}.conf"
 
     sed "s/{{db_password}}/${DB_PASSWORD}/g" "${CONTAINER_DIR}/${SERVICE}/templates/start_template.sh" > "${BUILD_ROOT}/containers/${SERVICE}/start.sh"
+    chmod +x "${CONTAINER_DIR}/${SERVICE}/start.sh"
 }
 
 for SERVICE in "$@"; do
