@@ -19,17 +19,15 @@ function docker-build-cmd {
 
 function build-templates {
     echo "Building templates for ${SERVICE}"
-    sed "s/{{cluster_name}}/${CLUSTER_NAME}/g" "${CONTAINER_DIR}/${SERVICE}/templates/${SERVICE}_template.conf" > "${BUILD_ROOT}/containers/${SERVICE}/${SERVICE}.conf"
-
-    sed -i "s/{{cluster_addresses}}/${CLUSTER_ADDRESSES}/g" "${CONTAINER_DIR}/${SERVICE}/${SERVICE}.conf"
 
     sed "s/{{db_password}}/${DB_PASSWORD}/g" "${CONTAINER_DIR}/${SERVICE}/templates/start_template.sh" > "${BUILD_ROOT}/containers/${SERVICE}/start.sh"
-    chmod +x "${CONTAINER_DIR}/${SERVICE}/start.sh"
+
+    templates-to-configs $CLUSTER_SIZE
 }
 
 for SERVICE in "$@"; do
-    templates-to-configs $CLUSTER_SIZE
-
     build-templates
+
+    chmod +x "${CONTAINER_DIR}/${SERVICE}/start.sh"
     docker-build-cmd "${CONTAINER_DIR}/${SERVICE}"
 done
