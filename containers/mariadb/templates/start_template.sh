@@ -13,13 +13,11 @@ function bootstrap {
     ./security_reset.exp
     mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
     mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
-    mysqladmin -uroot -p "{{db_password}}" shutdown
+    mysqladmin -uroot -p"{{db_password}}" shutdown
 }
 
 mkdir -p /var/lib/mysql
 chown -R mysql: /var/lib/mysql
-
-tail -f /var/log/mariadb/mariadb.log &
 
 if [[ "${!BOOTSTRAP[@]}" ]]; then
     mysql_install_db
@@ -28,4 +26,7 @@ if [[ "${!BOOTSTRAP[@]}" ]]; then
     exit 0
 fi
 
-/usr/bin/mysqld_safe
+tail -f /var/log/mariadb/mariadb.log &
+
+#TODO: run this entire script as non root
+runuser mysql -s "/bin/bash" -c "mysqld_safe"
