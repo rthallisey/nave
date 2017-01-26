@@ -14,7 +14,10 @@ RUN yum install -y MariaDB-Galera-server \
                    socat \
                    hostname \
                    expect \
-                   percona-xtrabackup
+                   percona-xtrabackup \
+                   which \
+                   socat \
+                   tar
 
 RUN mkdir -p /var/log/mariadb \
     && touch /var/log/mariadb/mariadb.log \
