@@ -1,5 +1,8 @@
 #!/bin/bash
 
+PROJECT="ansibleapp"
+REGISTRY="nave-centos"
+
 DB_PASSWORD="password"
 CLUSTER_NAME="vessel_cluster"
 CLUSTER_SIZE=3

@@ -25,7 +25,6 @@ RUN mkdir -p /var/log/mariadb \
     && rm -rf /var/lib/mysql/* \
     && chmod 755 /var/log/mariadb/mariadb.log
 
-COPY mariadb.conf /etc/my.cnf
 COPY start.sh security_reset.exp ./
 
 CMD ["./start.sh"]
