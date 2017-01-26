@@ -5,10 +5,13 @@ spec:
     - port: 3306
       name: mariadb-{{count}}
     - port: 4567
-      name: mariadb-{{count}}-replication
-    - Port: 4444
+      name: mariadb-{{count}}-replication-tcp
+    - port: 4567
+      name: mariadb-{{count}}-replication-udp
+      protocol: UDP
+    - port: 4444
       name: mariadb-{{count}}-sst
-    - Port: 4568
+    - port: 4568
       name: mariadb-{{count}}-ist
   selector:
     service: mariadb-{{count}}
