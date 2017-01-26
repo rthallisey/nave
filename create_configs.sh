@@ -9,6 +9,9 @@ function templates-to-configs {
       f=$(echo $j | sed -e s,template,$i,)
       cp "${BUILD_ROOT}/kubernetes/${SERVICE}/templates"/$j "${BUILD_ROOT}/kubernetes/${SERVICE}"/$f
       sed -i "s,{{count}},$i,g" "${BUILD_ROOT}/kubernetes/${SERVICE}"/$f
+
+      sed -i "s,{{container_name}},${CONTAINER_REG}-${SERVICE}:${TAG},g" "${BUILD_ROOT}/kubernetes/${SERVICE}"/$f
+
     done
   done
 }

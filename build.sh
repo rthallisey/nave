@@ -7,7 +7,7 @@ CONTAINER_DIR="${BUILD_ROOT}/containers"
 source "${BUILD_ROOT}/default-config.sh"
 source "${BUILD_ROOT}/create_configs.sh"
 
-CONTAINER_REG="nave/centos"
+CONTAINER_REG="ansibleapp/nave-centos"
 TAG="${TAG:-latest}"
 
 function docker-build-cmd {

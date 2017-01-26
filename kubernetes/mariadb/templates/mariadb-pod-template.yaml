@@ -17,24 +17,13 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: 172.16.35.13
       containers:
-        - image: "kolla/centos-binary-mariadb:3.0.1"
+        - image: "{{container_name}}"
           name: main
           volumeMounts:
-            - mountPath: /var/lib/kolla/config_files
-              name: mariadb-config
             - mountPath: /var/lib/mysql
               name: mariadb-persistent-storage
-          env:
-            - name: KOLLA_CONFIG_STRATEGY
-              value: "COPY_ALWAYS"
-            - name: DATABASE_PASSWORD
-              value: "EhgolE0E6NtamoYQsCrmnMWbvFTHGrza83Ddy0Ip"
-            - name: DB_ROOT_PASSWORD
-              value: "EhgolE0E6NtamoYQsCrmnMWbvFTHGrza83Ddy0Ip"
-              # valueFrom:
-              #   secretKeyRef:
-              #     name: database-password
-              #     key: password
+            - mountPath: /var/log/mariadb
+              name: mariadb-persistent-storage
           ports:
             - containerPort: 3306
               name: mariadb-{{count}}
@@ -45,9 +34,6 @@ spec:
             - containerPort: 4568
               name: ist
       volumes:
-        - name: mariadb-config
-          configMap:
-            name: mariadb-{{count}}
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
             claimName: mariadb-{{count}}
