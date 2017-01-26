@@ -13,13 +13,14 @@ RUN yum install -y MariaDB-Galera-server \
                    galera \
                    socat \
                    hostname \
-                   expect
+                   expect \
+                   percona-xtrabackup
 
 RUN mkdir -p /var/log/mariadb \
     && touch /var/log/mariadb/mariadb.log \
     && chown -R mysql: /var/log/mariadb \
-    && chmod 755 /var/log/mariadb/mariadb.log \
-    && rm -rf /var/lib/mysql
+    && rm -rf /var/lib/mysql/* \
+    && chmod 755 /var/log/mariadb/mariadb.log
 
 COPY mariadb.conf /etc/my.cnf
 COPY start.sh security_reset.exp ./

@@ -8,4 +8,4 @@ spec:
   capacity:
     storage: 5Gi
   hostPath:
-    path: /var/lib/kolla/volumes/mariadb-{{count}}
+    path: /var/lib/nave/mariadb-{{count}}
