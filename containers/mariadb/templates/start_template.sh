@@ -31,4 +31,4 @@ fi
 tail -f /var/log/mariadb/mariadb.log &
 
 #TODO: run this entire script as non root
-runuser mysql -s "/bin/bash" -c "mysqld_safe"
+runuser mysql -s "/bin/bash" -c "mysqld_safe" $BOOTSTRAP_ARGS

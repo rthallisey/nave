@@ -26,10 +26,6 @@ function build-templates {
     container-variable-replace "db_password" "{$DB_PASSWORD}"
 
     build-configs
-
-    if [[ "${SERVICE}" = "mariadb" ]]; then
-        mariadb-node-1
-    fi
 }
 
 for SERVICE in "$@"; do

@@ -35,6 +35,9 @@ spec:
               name: replication
             - containerPort: 4568
               name: ist
+          env:
+            - name: BOOTSTRAP_ARGS
+              value: {{bootstrap_args}}
       volumes:
         - name: mariadb-persistent-storage
           persistentVolumeClaim:

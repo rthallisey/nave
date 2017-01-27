@@ -2,6 +2,15 @@
 
 source "${BUILD_ROOT}/utils.sh"
 
+function resolve-special-cases {
+    # First mariadb node needs --wsrep-new-cluster"
+    if [[ "${CONFIG_NAME}" == "mariadb-1" ]]; then
+        kube-variable-replace "bootstrap_args" "--wsrep-new-cluster"
+    else
+        kube-variable-replace "bootstrap_args" "''"
+    fi
+}
+
 function build-kube-resources {
   for template_file in $(ls "${BUILD_ROOT}/kubernetes/${SERVICE}/templates/" | xargs -n 1 basename); do
     local kube_file=$(echo $template_file | sed -e "s/template/${cluster_count}/")
@@ -11,6 +20,7 @@ function build-kube-resources {
 
     # Kubernetes templates
     copy-kubernetes-template
+    resolve-special-cases
     kube-variable-replace "count" "${cluster_count}"
     kube-variable-replace "container_name" "${PROJECT}\/${REGISTRY}-${SERVICE}-${TAG}"
   done
