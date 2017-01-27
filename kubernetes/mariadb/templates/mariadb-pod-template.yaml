@@ -24,6 +24,8 @@ spec:
               name: mariadb-persistent-storage
             - mountPath: /var/log/mariadb
               name: mariadb-persistent-storage
+            - mountPath: /etc/nave/
+              name: mariadb-config
           ports:
             - containerPort: 3306
               name: mariadb-{{count}}
@@ -37,6 +39,9 @@ spec:
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
             claimName: mariadb-{{count}}
+        - name: mariadb-config
+          configMap:
+            name: mariadb-{{count}}
 metadata:
    name: mariadb-{{count}}
    namespace: "default"

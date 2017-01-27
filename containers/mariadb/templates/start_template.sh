@@ -19,6 +19,8 @@ function bootstrap {
 mkdir -p /var/lib/mysql
 chown -R mysql: /var/lib/mysql
 
+cp /etc/nave/mariadb.conf /etc/my.cnf
+
 if [[ "${!BOOTSTRAP[@]}" ]]; then
     mysql_install_db
     chown -R mysql: /var/lib/mysql
