@@ -11,8 +11,15 @@ function resolve-special-cases {
     fi
 }
 
+function copy-bootstrap-template {
+    KUBE_TEMPLATE="${BUILD_ROOT}/kubernetes/${SERVICE}/templates/${SERVICE}-bootstrap-template.yaml"
+    KUBE_FILE="${BUILD_ROOT}/kubernetes/${SERVICE}/${SERVICE}-bootstrap.yaml"
+    copy-kubernetes-template
+    kube-variable-replace "container_name" "${PROJECT}\/${REGISTRY}-${SERVICE}:${TAG}"
+}
+
 function build-kube-resources {
-  for template_file in $(ls "${BUILD_ROOT}/kubernetes/${SERVICE}/templates/" | xargs -n 1 basename); do
+  for template_file in $(ls "${BUILD_ROOT}/kubernetes/${SERVICE}/templates/" | grep -v bootstrap |xargs -n 1 basename); do
     local kube_file=$(echo $template_file | sed -e "s/template/${cluster_count}/")
 
     KUBE_TEMPLATE="${BUILD_ROOT}/kubernetes/${SERVICE}/templates/${template_file}"
@@ -22,7 +29,7 @@ function build-kube-resources {
     copy-kubernetes-template
     resolve-special-cases
     kube-variable-replace "count" "${cluster_count}"
-    kube-variable-replace "container_name" "${PROJECT}\/${REGISTRY}-${SERVICE}-${TAG}"
+    kube-variable-replace "container_name" "${PROJECT}\/${REGISTRY}-${SERVICE}:${TAG}"
   done
 }
 
@@ -38,6 +45,7 @@ function build-configs {
 
     # Create Kubernetes Resources
     build-kube-resources
+    copy-bootstrap-template
 
     # Create $SERVICE.conf
     copy-config-template
