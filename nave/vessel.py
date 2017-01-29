@@ -12,13 +12,15 @@
 
 """Base class for a Vessel."""
 
+import os
 import subprocess
-
+import urllib2
 
 class Vessel(object):
 
     def __init__(self, data):
         self.data = data
+        self._get_kube_token()
 
         self.template = self.data.get('vesselSpec')
         self.dependencies = self.template.get('dependencies')
@@ -73,6 +75,32 @@ class Vessel(object):
             print("This is not a valid lifecycle action. "
                   "Pick from the list of valid action: %s"
                   % self.lifecycle_actions)
+
+    def _get_kube_token(self):
+        """Kubernetes places a token in every pod that can securly contact the
+           rest API
+        """
+        with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as kube_token:
+            self.kube_token = content_file.read()
+
+    def _contact_kube_endpoint(self, addr):
+        return requests.get(url, headers=headers, verify=False).json()
+
+    def _get_vessel_version(self):
+        # All vessels endpoint
+        # https://172.16.35.11:6443/apis/nave.vessel/v1/servicevessels/
+
+        # Specific vessel endpoint
+        # https://172.16.35.11:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
+
+        # Vessel version endpoint
+        # https://172.16.35.11:6443/apis/nave.vessel/
+
+        endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
+        port = os.getenv("KUBERNETES_PORT_443_TCPORT")
+
+        url = "https://%s:%s/apis/nave.vessel" % (endpoint, port)
+        self.vessel_version = self.contact_kube_endpoint(url)
 
     def get_services(self):
         return self.services

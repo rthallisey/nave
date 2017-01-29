@@ -1,0 +1,6 @@
+apiVersion: "nave.vessel/v1"
+kind: ServiceVessel
+metadata:
+  name: mariadb-vessel
+vesselSpec:
+  stem: recovery
