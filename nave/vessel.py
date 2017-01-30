@@ -18,14 +18,10 @@ import urllib2
 
 class Vessel(object):
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self):
         self._get_kube_token()
-
-        self.template = self.data.get('vesselSpec')
-        self.dependencies = self.template.get('dependencies')
-        self.action = self.template.get('action')
-        self.name = self.template.get('serviceName')
+        self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
+        self.kube_port = os.getenv("KUBERNETES_PORT_443_TCPORT")
 
         super(Vessel, self).__init__()
 
@@ -87,19 +83,10 @@ class Vessel(object):
         return requests.get(url, headers=headers, verify=False).json()
 
     def _get_vessel_version(self):
-        # All vessels endpoint
-        # https://172.16.35.11:6443/apis/nave.vessel/v1/servicevessels/
-
-        # Specific vessel endpoint
-        # https://172.16.35.11:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
-
         # Vessel version endpoint
-        # https://172.16.35.11:6443/apis/nave.vessel/
+        # https://<kube_ip_address>:6443/apis/nave.vessel/
 
-        endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
-        port = os.getenv("KUBERNETES_PORT_443_TCPORT")
-
-        url = "https://%s:%s/apis/nave.vessel" % (endpoint, port)
+        url = "https://%s:%s/apis/nave.vessel" % (self.kube_endpoint, self.kube_port)
         self.vessel_version = self.contact_kube_endpoint(url)
 
     def get_services(self):

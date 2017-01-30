@@ -17,8 +17,8 @@ from vessel import Vessel
 
 class ServiceVessel(Vessel):
 
-    def __init__(self, data):
-        super(ServiceVessel, self).__init__(data)
+    def __init__(self):
+        super(ServiceVessel, self).__init__()
 
     def _helm_client(self, *args):
         helm_args = ''
@@ -39,3 +39,19 @@ class ServiceVessel(Vessel):
         """Execute a Helm package for a service"""
 
         self._helm_client("helm install --name %s %s" % self.name, service)
+
+    def _get_all_vessels(self):
+        # All vessels endpoint
+        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/servicevessels/
+
+        url = "https://%s:%s/apis/nave.vessel/v1/servicevessels" % (self.kube_endpoint, self.kube_port)
+        return self.contact_kube_endpoint(url)
+
+    def _get_service_vessel(self, service):
+        # Specific vessel endpoint
+        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
+
+        url = "https://%s:%s/apis/nave.vessel/v1/namespaces/default/" \
+              "servicevessels/%s-vessel" % (self.kube_endpoint,
+                                            self.kube_port,service)
+        return self.contact_kube_endpoint(url)

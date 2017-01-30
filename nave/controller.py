@@ -14,7 +14,6 @@
 import argparse
 import json
 import sys
-import urllib2
 
 from vessel import Vessel
 from mariadb_vessel.mariadb_vessel import MariadbVessel
@@ -32,26 +31,9 @@ def main():
     args = parser()
     service = args.vessel
 
-    url = 'http://localhost:8080/apis/nave.vessel/v1/namespaces/default/'
-    # TODO(rhallisey): error check the response
-    # TODO(rhallisey): this can be customized to a different name as long as we
-    # check against a list of valid vessels
-    if service == 'mariadb':
-        response = urllib2.urlopen(url + 'servicevessels/' + service +
-                                   '-vessel')
-
-    info = response.read()
-    # TODO(rhallisey) JSON error checking
-    user_data = json.loads(info)
-
-    if user_data.get('kind') == 'Vessel':
-        op = Vessel(user_data)
-        op.deploy()
-
-    if user_data.get('kind') == 'ServiceVessel':
-        vessel_dict = {'mariadb': MariadbVessel(user_data)}
-        service_ves = vessel_dict.get(service)
-        service_ves.do_action()
+    vessel_dict = {'mariadb': MariadbVessel()}
+    service_ves = vessel_dict.get(service)
+    service_ves.
 
 if __name__ == '__main__':
     sys.exit(main())
