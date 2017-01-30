@@ -1,4 +1,4 @@
 FROM centos:latest
 MAINTAINER Ryan Hallisey
 
-COPY controller.py vessel.py service_vessel.py /opt/vessel/bin/
+COPY controller.py vessel.py /opt/vessel/bin/

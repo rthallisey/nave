@@ -10,17 +10,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Mariadb Vessel class."""
+"""Mariadb Vessel class
 
+A service_vessel class will describe how a service should run. The class
+will cover the follow critera:
+    Input:
+      - Events
+      - Thirdpartyresource data
+    Class Definition:
+      - Event handeling
+          Interprets whether and event should trigger a workflow.
+      - Workflows
+          Holds service specifc workflows.
+"""
 
-from service_vessel import ServiceVessel
+import sys
 
+from vessel import Vessel
+from thirdpartyresource import ThirdPartyResource
 
-class MariadbVessel(ServiceVessel):
+class MariadbVessel(Vessel):
 
-    def __init__(self, data):
+    def __init__(self):
+        self.tpr_data = self._get_service_vessel('mariadb')
+        ThirdPartyResource(self.tpr_data)
         self.lifecycle_actions = ['deploy', 'recovery']
-        super(MariadbVessel, self).__init__(data)
+
+        super(Vessel, self).__init__()
 
     def _mariadb_recovery(self):
         """Workflow for recovering mariadb"""
@@ -36,17 +52,3 @@ class MariadbVessel(ServiceVessel):
         # run /etc/init.d/mysql start --wsrep-new-cluster on the highest seqno
 
         pass
-
-    def _deploy(self):
-        self._run_helm_package()
-
-    def do_action(self):
-        if self.action in self.lifecycle_actions:
-            if self.action == 'deploy':
-                self._deploy()
-            elif self.action == 'recovery':
-                self._mariadb_recovery()
-        else:
-            print("%s is not a valid lifecycle action. "
-                  "Pick from the list of valid action: %s"
-                  % self.action, self.lifecycle_actions)

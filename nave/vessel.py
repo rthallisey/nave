@@ -10,7 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Base class for a Vessel."""
+"""Base class for a Vessel
+
+Common functions that will serve all Vessels
+"""
 
 import os
 import subprocess
@@ -39,39 +42,6 @@ class Vessel(object):
         out, err = p.communicate()
         return out, err
 
-    def _user_action(self, *args, **kwargs):
-        """Perform a user directed action.
-
-        Gather and Execute how the user wants to run Kubernetes Vessels.
-        """
-
-        pass
-
-    def _spawn_vessels(self, service):
-        """Spawn a Vessel"""
-
-        self._kube_client("kubectl create -f"
-                          "/etc/nave/%s/%s-vessel.yaml"
-                          % service, service)
-
-    def _dependency_chain(self, service):
-        """Determine the dependencies of a service"""
-
-        pass
-
-    def _workflow(self):
-        """Perform an Lifecycle action for a complex application"""
-
-        if self.action in self.lifecycle_actions:
-            self._user_action()
-            for service in self.services:
-                self._spawn_vessels(service)
-        # TODO(rhallisey): Exception & Error handling
-        else:
-            print("This is not a valid lifecycle action. "
-                  "Pick from the list of valid action: %s"
-                  % self.lifecycle_actions)
-
     def _get_kube_token(self):
         """Kubernetes places a token in every pod that can securly contact the
            rest API
@@ -89,5 +59,18 @@ class Vessel(object):
         url = "https://%s:%s/apis/nave.vessel" % (self.kube_endpoint, self.kube_port)
         self.vessel_version = self.contact_kube_endpoint(url)
 
-    def get_services(self):
-        return self.services
+    def _get_all_vessels(self):
+        # All vessels endpoint
+        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/servicevessels/
+
+        url = "https://%s:%s/apis/nave.vessel/v1/servicevessels" % (self.kube_endpoint, self.kube_port)
+        return self.contact_kube_endpoint(url)
+
+    def _get_service_vessel(self, service):
+        # Specific vessel endpoint
+        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
+
+        url = "https://%s:%s/apis/nave.vessel/v1/namespaces/default/" \
+              "servicevessels/%s-vessel" % (self.kube_endpoint,
+                                            self.kube_port,service)
+        return self.contact_kube_endpoint(url)
