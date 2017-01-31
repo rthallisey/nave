@@ -16,8 +16,9 @@ Common functions that will serve all Vessels
 """
 
 import os
+import requests
 import subprocess
-import urllib2
+
 
 class Vessel(object):
 
@@ -25,8 +26,7 @@ class Vessel(object):
         self._get_kube_token()
         self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
         self.kube_port = os.getenv("KUBERNETES_PORT_443_TCPORT")
-
-        super(Vessel, self).__init__()
+        self.header = { 'Authorization': 'Bearer %s' %self.kube_token}
 
     def _kube_client(self, *args):
         kubeargs = ''
@@ -46,16 +46,16 @@ class Vessel(object):
         """Kubernetes places a token in every pod that can securly contact the
            rest API
         """
-        with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as kube_token:
-            self.kube_token = content_file.read()
+        with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as token_file:
+            token = token_file.readlines()
+        self.kube_token = token[0]
 
-    def _contact_kube_endpoint(self, addr):
-        return requests.get(url, headers=headers, verify=False).json()
+    def _contact_kube_endpoint(self, url):
+        return requests.get(url, headers=self.header, verify=False).json()
 
     def _get_vessel_version(self):
         # Vessel version endpoint
         # https://<kube_ip_address>:6443/apis/nave.vessel/
-
         url = "https://%s:%s/apis/nave.vessel" % (self.kube_endpoint, self.kube_port)
         self.vessel_version = self.contact_kube_endpoint(url)
 
@@ -69,8 +69,7 @@ class Vessel(object):
     def _get_service_vessel(self, service):
         # Specific vessel endpoint
         # https://<kube_ip_address>:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
-
         url = "https://%s:%s/apis/nave.vessel/v1/namespaces/default/" \
               "servicevessels/%s-vessel" % (self.kube_endpoint,
                                             self.kube_port,service)
-        return self.contact_kube_endpoint(url)
+        return self._contact_kube_endpoint(url)

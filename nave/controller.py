@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Controller
+
+This script will interact with the Vessel and transfer events to the Vessel as
+they happen.  It will be run when the container starts and serves as a daemon.
+"""
+
 import argparse
 import json
 import sys
@@ -27,13 +33,22 @@ def parser():
     return parser.parse_args()
 
 
+def cluster_event():
+    """ Cluster event
+
+        Look for any events in the cluster and make the Vessel aware of them.
+    """
+    print "Looking for Cluster Events..."
+
+
 def main():
     args = parser()
     service = args.vessel
 
     vessel_dict = {'mariadb': MariadbVessel()}
     service_ves = vessel_dict.get(service)
-    service_ves.
+    service_ves.get_tpr_data()
+
 
 if __name__ == '__main__':
     sys.exit(main())

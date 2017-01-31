@@ -32,11 +32,9 @@ from thirdpartyresource import ThirdPartyResource
 class MariadbVessel(Vessel):
 
     def __init__(self):
-        self.tpr_data = self._get_service_vessel('mariadb')
-        ThirdPartyResource(self.tpr_data)
+        super(MariadbVessel, self).__init__()
         self.lifecycle_actions = ['deploy', 'recovery']
 
-        super(Vessel, self).__init__()
 
     def _mariadb_recovery(self):
         """Workflow for recovering mariadb"""
@@ -52,3 +50,10 @@ class MariadbVessel(Vessel):
         # run /etc/init.d/mysql start --wsrep-new-cluster on the highest seqno
 
         pass
+
+    def init_thirdpartyresource (self):
+        ThirdPartyResource(self.tpr_data)
+
+    def get_tpr_data(self):
+        self.tpr_data = self._get_service_vessel('mariadb')
+        print self.tpr_data
