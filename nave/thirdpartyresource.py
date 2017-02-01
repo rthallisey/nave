@@ -16,8 +16,9 @@ import json
 
 class ThirdPartyResource(object):
 
-    def __init__(self):
-        print "init TPR data"
-
-    def _read_tpr_data(self):
-        print "reading data"
+    def __init__(self, data):
+        self.tpr_data = data
+        self.kind = self.tpr_data.get('kind')
+        self.vessel_spec = self.tpr_data.get('vesselSpec')
+        self.name = self.tpr_data.get('metadata').get('name')
+        self.timestamp = self.tpr_data.get('metadata').get('creationTimestamp')

@@ -16,19 +16,29 @@ Common functions that will serve all Vessels
 """
 
 import os
-import requests
-import subprocess
 
+import subprocess
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from kubernetes import Kubernetes
 
 class Vessel(object):
 
     def __init__(self):
-        self._get_kube_token()
+        # Kubernetes has these environment vars set in every container running
+        # in the cluster
         self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
         self.kube_port = os.getenv("KUBERNETES_PORT_443_TCPORT")
-        self.header = { 'Authorization': 'Bearer %s' %self.kube_token}
+        self.base_url = "https://%s:%s/" % (self.kube_endpoint, self.kube_port)
+
+        self.kubernetes = Kubernetes()
+        # Disable HTTPS warnings from request
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
     def _kube_client(self, *args):
+        # https://github.com/kubernetes-incubator/client-python
+
         kubeargs = ''
         if isinstance(args, list):
             for arg in args:
@@ -42,34 +52,32 @@ class Vessel(object):
         out, err = p.communicate()
         return out, err
 
-    def _get_kube_token(self):
-        """Kubernetes places a token in every pod that can securly contact the
-           rest API
-        """
-        with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as token_file:
-            token = token_file.readlines()
-        self.kube_token = token[0]
-
-    def _contact_kube_endpoint(self, url):
-        return requests.get(url, headers=self.header, verify=False).json()
 
     def _get_vessel_version(self):
         # Vessel version endpoint
-        # https://<kube_ip_address>:6443/apis/nave.vessel/
-        url = "https://%s:%s/apis/nave.vessel" % (self.kube_endpoint, self.kube_port)
-        self.vessel_version = self.contact_kube_endpoint(url)
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/
+
+        url = self.base_url + "apis/nave.vessel"
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+
 
     def _get_all_vessels(self):
         # All vessels endpoint
-        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/servicevessels/
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/servicevessels/
 
-        url = "https://%s:%s/apis/nave.vessel/v1/servicevessels" % (self.kube_endpoint, self.kube_port)
-        return self.contact_kube_endpoint(url)
+        url = self.base_url + "apis/nave.vessel/v1/servicevessels"
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
-    def _get_service_vessel(self, service):
+
+    def _service_vessel_tpr_data(self, service):
         # Specific vessel endpoint
-        # https://<kube_ip_address>:6443/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
-        url = "https://%s:%s/apis/nave.vessel/v1/namespaces/default/" \
-              "servicevessels/%s-vessel" % (self.kube_endpoint,
-                                            self.kube_port,service)
-        return self._contact_kube_endpoint(url)
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
+        url = self.base_url + "apis/nave.vessel/v1/namespaces/default/" \
+              "servicevessels/%s-vessel" %service
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+
+
+    def _get_service_pods(self, service):
+        url = self.base_url + "api/v1/namespaces/default/pods"
+        print url
+        print self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)

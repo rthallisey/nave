@@ -18,8 +18,11 @@ they happen.  It will be run when the container starts and serves as a daemon.
 """
 
 import argparse
+from datetime import datetime
 import json
 import sys
+import time
+
 
 from vessel import Vessel
 from mariadb_vessel.mariadb_vessel import MariadbVessel
@@ -33,12 +36,30 @@ def parser():
     return parser.parse_args()
 
 
-def cluster_event():
+def cluster_event(service_vessel):
     """ Cluster event
 
-        Look for any events in the cluster and make the Vessel aware of them.
+    When a container that's managed by a vessel starts, it will use an
+    init container to reach out to the vessel to see if it's ok to start.
+
+    The vessel is aware of the cluster size.
+
+    Any complex or stateful application will require each service to have its
+    own service endpoint.  Therefore, the number of active services in the
+    cluster equals the number of service endpoints.
+
+       kube_url + "apis/v1/namespaces/default/endpoints/<service>"
+
+    Otherwise, we can look at the # of pods and compare that to the number
+    that should be running in the cluster
     """
-    print "Looking for Cluster Events..."
+    print "cluster event"
+
+def compare_timestamp(t1, t2):
+    t1 = datetime.strptime(t1, "%Y-%m-%dT%H:%M:%SZ")
+    t2 = datetime.strptime(t2, "%Y-%m-%dT%H:%M:%SZ")
+
+    return t1 < t2
 
 
 def main():
@@ -46,9 +67,25 @@ def main():
     service = args.vessel
 
     vessel_dict = {'mariadb': MariadbVessel()}
-    service_ves = vessel_dict.get(service)
-    service_ves.get_tpr_data()
+    service_vessel = vessel_dict.get(service)
+    service_vessel.print_tpr_spec()
+    ts_old = service_vessel.get_timestamp()
 
+    while(True):
+        # check for newer timestamp (new tpr resource)
+        ts_new = service_vessel.get_timestamp()
+        if compare_timestamp(ts_new, ts_old):
+            print "ThirdPartyResource has been updated. " \
+                   "Reloading it's data..."
+            service_vessel.load_tpr_data()
+
+        # check if an event occured in the cluster
+        event = cluster_event(service)
+        if event is not None:
+            service_vessel.trigger_cluster_event(event)
+
+        time.sleep(1)
+        exit(0)
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -34,6 +34,7 @@ class MariadbVessel(Vessel):
     def __init__(self):
         super(MariadbVessel, self).__init__()
         self.lifecycle_actions = ['deploy', 'recovery']
+        self.load_tpr_data()
 
 
     def _mariadb_recovery(self):
@@ -51,9 +52,24 @@ class MariadbVessel(Vessel):
 
         pass
 
-    def init_thirdpartyresource (self):
-        ThirdPartyResource(self.tpr_data)
 
-    def get_tpr_data(self):
-        self.tpr_data = self._get_service_vessel('mariadb')
-        print self.tpr_data
+    def load_tpr_data(self):
+        self.tpr_data = self._service_vessel_tpr_data('mariadb')
+        self.tpr = ThirdPartyResource(self.tpr_data)
+
+
+    def print_tpr_spec(self):
+        print self.tpr.vessel_spec
+
+
+    def get_timestamp(self):
+        self.load_tpr_data()
+        return self.tpr.timestamp
+
+
+    def get_pods(self):
+        self._get_service_pods("mariadb")
+
+
+    def trigger_cluster_evenet(self, event):
+        print event
