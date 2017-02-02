@@ -18,12 +18,11 @@ they happen.  It will be run when the container starts and serves as a daemon.
 """
 
 import argparse
-from datetime import datetime
 import json
 import sys
-import time
 
 
+from kubernetes import Kubernetes
 from vessel import Vessel
 from mariadb_vessel.mariadb_vessel import MariadbVessel
 
@@ -36,7 +35,7 @@ def parser():
     return parser.parse_args()
 
 
-def cluster_event(service_vessel):
+def cluster_event(vessel, service):
     """ Cluster event
 
     When a container that's managed by a vessel starts, it will use an
@@ -52,40 +51,39 @@ def cluster_event(service_vessel):
 
     Otherwise, we can look at the # of pods and compare that to the number
     that should be running in the cluster
+
+    Two possible event triggers:
+       1) Init container calls to Kubernetes to spawn a vessel
+       2) User creates a vessel
     """
-    print "cluster event"
+    print "Checking cluster size..."
+    cluster_size = len(vessel.service_list(service))
 
-def compare_timestamp(t1, t2):
-    t1 = datetime.strptime(t1, "%Y-%m-%dT%H:%M:%SZ")
-    t2 = datetime.strptime(t2, "%Y-%m-%dT%H:%M:%SZ")
+    print "Checking number of pods in the cluster..."
+    pod_count = len(vessel.pod_list(service))-1
 
-    return t1 < t2
-
+    if cluster_size > pod_count:
+        return 'missing pod'
 
 def main():
     args = parser()
     service = args.vessel
 
+    vessel = Vessel()
+    kubernetes = Kubernetes()
+    token = kubernetes.token
     vessel_dict = {'mariadb': MariadbVessel()}
     service_vessel = vessel_dict.get(service)
-    service_vessel.print_tpr_spec()
-    ts_old = service_vessel.get_timestamp()
 
-    while(True):
-        # check for newer timestamp (new tpr resource)
-        ts_new = service_vessel.get_timestamp()
-        if compare_timestamp(ts_new, ts_old):
-            print "ThirdPartyResource has been updated. " \
-                   "Reloading it's data..."
-            service_vessel.load_tpr_data()
+    print "Using ThirdPartyResource with spec: %s" %service_vessel.get_tpr_spec()
+    print "Using ThirdPartyResource from: %s" % service_vessel.get_timestamp()
 
-        # check if an event occured in the cluster
-        event = cluster_event(service)
-        if event is not None:
-            service_vessel.trigger_cluster_event(event)
+    service_vessel.load_tpr_data()
 
-        time.sleep(1)
-        exit(0)
+    # check if an event occured in the cluster
+    event = cluster_event(vessel, service)
+    if event is not None:
+        service_vessel.trigger_cluster_event(event)
 
 if __name__ == '__main__':
     sys.exit(main())

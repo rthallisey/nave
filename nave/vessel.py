@@ -79,5 +79,18 @@ class Vessel(object):
 
     def _get_service_pods(self, service):
         url = self.base_url + "api/v1/namespaces/default/pods"
-        print url
         print self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+
+    def service_list(self, service):
+        url = self.base_url + "api/v1/namespaces/default/endpoints"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        m = filter(lambda u : service in u, map(lambda v :  v['metadata']['name'], k))
+        print "%s Services: %s" %(len(m), m)
+        return m
+
+    def pod_list(self, service):
+        url = self.base_url + "api/v1/namespaces/default/pods"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        m = filter(lambda u : service in u, map(lambda v :  v['metadata']['name'], k))
+        print "%s Pods: %s" %(len(m), m)
+        return m

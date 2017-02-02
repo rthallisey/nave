@@ -58,8 +58,8 @@ class MariadbVessel(Vessel):
         self.tpr = ThirdPartyResource(self.tpr_data)
 
 
-    def print_tpr_spec(self):
-        print self.tpr.vessel_spec
+    def get_tpr_spec(self):
+        return self.tpr.vessel_spec
 
 
     def get_timestamp(self):
@@ -71,5 +71,5 @@ class MariadbVessel(Vessel):
         self._get_service_pods("mariadb")
 
 
-    def trigger_cluster_evenet(self, event):
+    def trigger_cluster_event(self, event):
         print event
