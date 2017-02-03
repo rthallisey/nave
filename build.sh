@@ -22,9 +22,9 @@ function docker-build-cmd {
 function build-templates {
     echo "Building templates for ${SERVICE}"
     CONTAINER_TEMPLATE="${CONTAINER_DIR}/${SERVICE}/templates/start_template.sh"
-    CONTAINER_START_SCRIPT="${BUILD_ROOT}/containers/${SERVICE}/start.sh"
+    CONTAINER_START_SCRIPT="${CONTAINER_DIR}/${SERVICE}/start.sh"
+    copy-container-template
     container-variable-replace "db_password" "{$DB_PASSWORD}"
-
     build-configs
 }
 

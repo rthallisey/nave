@@ -55,6 +55,13 @@ function build-configs {
     config-variable-replace "db_password" "${DB_PASSWORD}"
 
     # Create Kubernetes configmaps
-    kubectl --kubeconfig="${HOME}/.kube/config" create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}"
+    if [[ -e "${ROOT}/.kube/config" ]]; then
+        kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "${CONFIG_NAME}"
+        kubectl --kubeconfig="${HOME}/.kube/config" create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}"
+    else
+        kubectl delete configmap "${CONFIG_NAME}"
+        kubectl create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}"
+    fi
+
   done
 }
