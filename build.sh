@@ -3,6 +3,7 @@
 ROOT=$(readlink -f $0)
 BUILD_ROOT=`dirname $ROOT`
 CONTAINER_DIR="${BUILD_ROOT}/containers"
+NAVE_DIR="${BUILD_ROOT}/nave"
 CONFIG_ROOT="${CONFIG_ROOT:-/etc/nave}"
 
 source "${BUILD_ROOT}/default-config.sh"
@@ -13,9 +14,11 @@ TAG="${TAG:-latest}"
 
 function docker-build-cmd {
     echo "Building container for ${SERVICE}"
-    local registry="${CONTAINER_REG}-${SERVICE}:${TAG}"
+    local service="${SERVICE:-$2}"
+    local registry="${CONTAINER_REG}-${service}:${TAG}"
 
-    docker build -t $registry $@
+    echo $registry
+    docker build -t $registry $1
     docker --config="${HOME}/.docker" push $registry
 }
 
@@ -24,13 +27,15 @@ function build-templates {
     CONTAINER_TEMPLATE="${CONTAINER_DIR}/${SERVICE}/templates/start_template.sh"
     CONTAINER_START_SCRIPT="${CONTAINER_DIR}/${SERVICE}/start.sh"
     copy-container-template
-    container-variable-replace "db_password" "{$DB_PASSWORD}"
+    container-variable-replace "db_password" "${DB_PASSWORD}"
     build-configs
 }
 
+docker-build-cmd "${NAVE_DIR}" "vessel-base"
 for SERVICE in "$@"; do
     build-templates
 
     chmod +x "${CONTAINER_DIR}/${SERVICE}/start.sh"
     docker-build-cmd "${CONTAINER_DIR}/${SERVICE}"
+    docker-build-cmd "${NAVE_DIR}/${SERVICE}_vessel" "vessel"
 done

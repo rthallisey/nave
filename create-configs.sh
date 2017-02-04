@@ -56,11 +56,11 @@ function build-configs {
 
     # Create Kubernetes configmaps
     if [[ -e "${ROOT}/.kube/config" ]]; then
-        kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "${CONFIG_NAME}"
-        kubectl --kubeconfig="${HOME}/.kube/config" create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}"
+        kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "${CONFIG_NAME}" -n vessels
+        kubectl --kubeconfig="${HOME}/.kube/config" create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}" -n vessels
     else
-        kubectl delete configmap "${CONFIG_NAME}"
-        kubectl create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}"
+        kubectl delete configmap "${CONFIG_NAME}" -n vessels
+        kubectl create configmap "${CONFIG_NAME}" --from-file="${CONFIG_FILE}" -n vessels
     fi
 
   done
