@@ -1,7 +1,8 @@
-FROM vessel-base:latest
+FROM ansibleapp/nave-centos-vessel-base:latest
 MAINTAINER Ryan Hallisey
 
-RUN mkdir /mariadb_vessel
-COPY __init__.py mariadb_vessel.py /opt/vessel/bin
+RUN mkdir /vessel/mariadb_vessel
+COPY __init__.py mariadb_vessel.py /vessel/mariadb_vessel/
 
-CMD ["controller.py mariadb"]
+CMD ["sleep", "10000"]
+#CMD ["controller.py", "mariadb"]
