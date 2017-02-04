@@ -1,5 +1,8 @@
 apiVersion: v1
 kind: Service
+metadata:
+   name: mariadb-{{count}}
+   namespace: vessels
 spec:
   ports:
     - port: 3306
@@ -15,6 +18,3 @@ spec:
       name: mariadb-{{count}}-ist
   selector:
     service: mariadb-{{count}}
-metadata:
-   name: mariadb-{{count}}
-   namespace: "default"

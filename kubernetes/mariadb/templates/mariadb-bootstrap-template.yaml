@@ -2,13 +2,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: mariadb-bootstrap
-  namespace: "default"
+  namespace: vessels
 spec:
   template:
     spec:
       restartPolicy: OnFailure
       nodeSelector:
-        kubernetes.io/hostname: 172.16.35.13
+        kubernetes.io/hostname: kube2
       containers:
         - image: "{{container_name}}"
           name: main
