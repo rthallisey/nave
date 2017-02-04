@@ -3,6 +3,10 @@
 set -x
 set -e
 
+if [[ "${!BOOTSTRAP_ARGS[@]}" && -d "bootstrap" ]]; then
+    source /bootstrap/bootstrap-args.sh
+fi
+
 function bootstrap {
     mysqld_safe --wsrep-new-cluster &
 
@@ -31,4 +35,8 @@ fi
 tail -f /var/log/mariadb/mariadb.log &
 
 #TODO: run this entire script as non root
-runuser mysql -s "/bin/bash" -c "mysqld_safe" $BOOTSTRAP_ARGS
+if [[ -d "run_cmd" ]]; then
+    source /run_cmd/run-cmd.sh
+else
+    runuser mysql -s "/bin/bash" -c "mysqld_safe ${BOOTSTRAP_ARGS}"
+fi
