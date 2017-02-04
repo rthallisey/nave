@@ -29,7 +29,7 @@ class Vessel(object):
         # Kubernetes has these environment vars set in every container running
         # in the cluster
         self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
-        self.kube_port = os.getenv("KUBERNETES_PORT_443_TCPORT")
+        self.kube_port = os.getenv("KUBERNETES_PORT_443_TCP_PORT")
         self.base_url = "https://%s:%s/" % (self.kube_endpoint, self.kube_port)
 
         self.kubernetes = Kubernetes()
@@ -71,26 +71,27 @@ class Vessel(object):
 
     def _service_vessel_tpr_data(self, service):
         # Specific vessel endpoint
-        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/default/servicevessels/mariadb-vessel
-        url = self.base_url + "apis/nave.vessel/v1/namespaces/default/" \
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/vessels/servicevessels/mariadb-vessel
+        url = self.base_url + "apis/nave.vessel/v1/namespaces/vessels/" \
               "servicevessels/%s-vessel" %service
         return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
 
-    def _get_service_pods(self, service):
-        url = self.base_url + "api/v1/namespaces/default/pods"
-        print self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-
     def service_list(self, service):
-        url = self.base_url + "api/v1/namespaces/default/endpoints"
+        url = self.base_url + "api/v1/namespaces/vessels/endpoints"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
-        m = filter(lambda u : service in u, map(lambda v :  v['metadata']['name'], k))
+        m = filter(lambda u : (service in u and 'vessel' not in u),
+                   map(lambda v :  v['metadata']['name'], k))
         print "%s Services: %s" %(len(m), m)
+        self.services = m
         return m
 
+
     def pod_list(self, service):
-        url = self.base_url + "api/v1/namespaces/default/pods"
+        url = self.base_url + "api/v1/namespaces/vessels/pods"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
-        m = filter(lambda u : service in u, map(lambda v :  v['metadata']['name'], k))
+        m = filter(lambda u : (service in u and 'bootstrap' not in u
+                               and 'vessel' not in u),
+                   map(lambda v :  v['metadata']['name'], k))
         print "%s Pods: %s" %(len(m), m)
         return m

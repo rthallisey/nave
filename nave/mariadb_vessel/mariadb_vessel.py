@@ -37,18 +37,26 @@ class MariadbVessel(Vessel):
         self.load_tpr_data()
 
 
-    def _mariadb_recovery(self):
+    def _mariadb_recovery(self, pods):
         """Workflow for recovering mariadb"""
 
         # need to have one template/pod for each galera node with their
         # own pv/pvc of /var/lib/mysql/grastate.dat
 
-        # read all volumes that hold /var/lib/mysql/grastate.dat
-        output, error = self._kube_client("kubectl exec mariadb cat "
-                                          "/var/lib/mysql/grastate.dat")
-        seqno = output
+        print pods
+        for pod in pods:
+            print pod
+            # read all volumes that hold /var/lib/mysql/grastate.dat
+            output, error = self._kube_client("kubectl exec %s cat "
+                                              "/var/lib/mysql/grastate.dat -n "
+                                              "vessels | grep seqno" %pod)
+            seqno = output
+
         # look for the highest positive value
-        # run /etc/init.d/mysql start --wsrep-new-cluster on the highest seqno
+        # run mysql start --wsrep-new-cluster on the highest seqno
+
+        print "Running Mariadb Recovery"
+        print seqno
 
         pass
 
@@ -67,9 +75,10 @@ class MariadbVessel(Vessel):
         return self.tpr.timestamp
 
 
-    def get_pods(self):
-        self._get_service_pods("mariadb")
-
-
-    def trigger_cluster_event(self, event):
+    def trigger_cluster_event(self, event, pods):
         print event
+
+        # Hack the event handling together.
+        # The new design is going to change this around with new class structure.
+        if event == "missing pod":
+            self._mariadb_recovery(pods)

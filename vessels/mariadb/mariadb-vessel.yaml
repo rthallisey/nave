@@ -1,31 +1,22 @@
 apiVersion: v1
-#apiVersion: apps/v1alpha1
-#kind: PetSet
 kind: ReplicationController
+metadata:
+   name: mariadb-vessel
+   namespace: vessels
 spec:
-#  serviceName: "galera"
   replicas: 1
   selector:
-    service: mariadb-1
+    service: mariadb-vessel
   template:
     metadata:
       labels:
-        service: mariadb-1
-#      annotations:
-#        pod.alpha.kubernetes.io/initialized: "true"
+        service: mariadb-vessel
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: 172.16.35.13
+#      nodeSelector:
+#        kubernetes.io/hostname: 172.16.35.13
       containers:
-        - image: "ansibleapp/nave-centos-mariadb-latest"
+        - image: "ansibleapp/nave-centos-mariadb-vessel:latest"
           name: main
-          volumeMounts:
-            - mountPath: /var/lib/mysql
-              name: mariadb-persistent-storage
-            - mountPath: /var/log/mariadb
-              name: mariadb-persistent-storage
-            - mountPath: /etc/nave/
-              name: mariadb-config
           ports:
             - containerPort: 3306
               name: mariadb-1
@@ -35,16 +26,7 @@ spec:
               name: replication
             - containerPort: 4568
               name: ist
-          env:
-            - name: BOOTSTRAP_ARGS
-              value: --wsrep-new-cluster
-      volumes:
-        - name: mariadb-persistent-storage
-          persistentVolumeClaim:
-            claimName: mariadb-1
-        - name: mariadb-config
-          configMap:
-            name: mariadb-1
-metadata:
-   name: mariadb-1
-   namespace: "default"
+            - containerPort: 443
+              name: kube
+            - containerPort: 6443
+              name: kube-1
