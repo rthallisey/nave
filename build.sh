@@ -14,7 +14,7 @@ TAG="${TAG:-latest}"
 
 function docker-build-cmd {
     echo "Building container for ${SERVICE}"
-    local service="${SERVICE:-$2}"
+    local service="${2:-$SERVICE}"
     local registry="${CONTAINER_REG}-${service}:${TAG}"
 
     echo $registry
@@ -37,5 +37,5 @@ for SERVICE in "$@"; do
 
     chmod +x "${CONTAINER_DIR}/${SERVICE}/start.sh"
     docker-build-cmd "${CONTAINER_DIR}/${SERVICE}"
-    docker-build-cmd "${NAVE_DIR}/${SERVICE}_vessel" "vessel"
+    docker-build-cmd "${NAVE_DIR}/${SERVICE}_vessel" "mariadb-vessel"
 done
