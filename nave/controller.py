@@ -62,6 +62,7 @@ def cluster_event(vessel, service):
     print "Checking number of pods in the cluster..."
     pod_count = len(vessel.pod_list(service))-1
 
+    # Always trigger a cluster event
     if cluster_size > pod_count:
         return 'missing pod'
 
@@ -82,8 +83,9 @@ def main():
 
     # check if an event occured in the cluster
     event = cluster_event(vessel, service)
+    pods = vessel.pod_list(service)
     if event is not None:
-        service_vessel.trigger_cluster_event(event)
+        service_vessel.trigger_cluster_event(event, pods)
 
 if __name__ == '__main__':
     sys.exit(main())
