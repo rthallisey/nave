@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sleep 10
+runuser mysql -s "/bin/bash" -c "mysqld_safe ${BOOTSTRAP_ARGS}"

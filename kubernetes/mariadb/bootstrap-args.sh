@@ -1,3 +1,3 @@
 #!/bin/bash
 
-BOOTSTRAP_ARGS="--wsre-new-cluster"
+BOOTSTRAP_ARGS="--wsrep-new-cluster"
