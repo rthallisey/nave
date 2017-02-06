@@ -38,19 +38,7 @@ class Vessel(object):
 
     def _kube_client(self, *args):
         # https://github.com/kubernetes-incubator/client-python
-
-        kubeargs = ''
-        if isinstance(args, list):
-            for arg in args:
-                kubeargs += arg
-        else:
-            kubeargs = ''.join(args)
-            kubeargs = kubeargs.split(' ')
-        subprocess.Popen(kubeargs)
-
-        p = subprocess.Popen(kubeargs, stdout=subprocess.PIPE)
-        out, err = p.communicate()
-        return out, err
+        pass
 
 
     def _get_vessel_version(self):

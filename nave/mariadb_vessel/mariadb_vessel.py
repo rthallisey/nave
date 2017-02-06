@@ -24,6 +24,7 @@ will cover the follow critera:
           Holds service specifc workflows.
 """
 
+import subprocess
 import sys
 
 from vessel import Vessel
@@ -44,21 +45,33 @@ class MariadbVessel(Vessel):
         # own pv/pvc of /var/lib/mysql/grastate.dat
 
         print pods
+        seqno = -1000
+        newest_pod = None
         for pod in pods:
             print pod
             # read all volumes that hold /var/lib/mysql/grastate.dat
-            output, error = self._kube_client("kubectl exec %s cat "
-                                              "/var/lib/mysql/grastate.dat -n "
-                                              "vessels | grep seqno" %pod)
-            seqno = output
+            p = subprocess.Popen(["kubectl", "exec", pod, "cat",
+                                  "/var/lib/mysql/grastate.dat"],
+                                 stdout=subprocess.PIPE)
 
-        # look for the highest positive value
+            output = p.stdout.readlines()
+            for item in output:
+                if "seqno" in item:
+                    output = item
+                    print output
+
+            output = int(output.split(":")[1])
+            # look for the highest positive value
+            if (output >= seqno):
+                seqno = output
+                newest_pod = pod
+
         # run mysql start --wsrep-new-cluster on the highest seqno
-
-        print "Running Mariadb Recovery"
-        print seqno
-
-        pass
+        print "Newest pod and seqno number"
+        print "newest database: %s" %newest_pod
+        print "seqno: %i" %seqno
+        with open('/latest-db/newest-db', 'w') as f:
+            f.write(newest_pod+"\n")
 
 
     def load_tpr_data(self):
