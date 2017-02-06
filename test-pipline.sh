@@ -162,4 +162,13 @@ case "$1" in
     'clean' )
         clean
         ;;
+    '-h' )
+        echo "test-pipeline.sh"
+        echo "This script is designed to test vessels by simulating cluster events."
+        echo "          bootstrap - Bootstrap MariaDB cluster"
+        echo "          setup - Setup a MariaDB Galera cluster"
+        echo "          recover - Recover from a damaged cluster"
+        echo "          clean - Delete everything from a running cluster"
+        echo "          -h - Help menu"
+        ;;
 esac
