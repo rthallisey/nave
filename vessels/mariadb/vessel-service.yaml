@@ -30,3 +30,28 @@ spec:
       name: mariadb-2-ist
   selector:
     service: mariadb-vessel
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mariadb-vessel
+  namespace: vessels
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  hostPath:
+    path: /var/lib/nave/vessel-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-vessel
+  namespace: vessels
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

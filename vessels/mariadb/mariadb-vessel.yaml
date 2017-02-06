@@ -12,8 +12,8 @@ spec:
       labels:
         service: mariadb-vessel
     spec:
-#      nodeSelector:
-#        kubernetes.io/hostname: 172.16.35.13
+      nodeSelector:
+        kubernetes.io/hostname: kube2
       containers:
         - image: "ansibleapp/nave-centos-mariadb-vessel:latest"
           name: main
@@ -30,3 +30,12 @@ spec:
               name: kube
             - containerPort: 6443
               name: kube-1
+          volumeMounts:
+            - mountPath: /latest-db
+              name: vessel-persistent-storage
+            - mountPath: /var/log/vessel
+              name: vessel-persistent-storage
+      volumes:
+        - name: vessel-persistent-storage
+          persistentVolumeClaim:
+            claimName: mariadb-vessel
