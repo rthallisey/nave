@@ -127,7 +127,7 @@ function setup-mariadb {
             sleep 10
             bootstrap-replace
             kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-            kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="$p{BOOTSTRAP_FILE}" -n vessels
+            kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
         fi
     done
 }
@@ -165,10 +165,12 @@ case "$1" in
     '-h' )
         echo "test-pipeline.sh"
         echo "This script is designed to test vessels by simulating cluster events."
-        echo "          bootstrap - Bootstrap MariaDB cluster"
-        echo "          setup - Setup a MariaDB Galera cluster"
-        echo "          recover - Recover from a damaged cluster"
-        echo "          clean - Delete everything from a running cluster"
-        echo "          -h - Help menu"
+        echo ""
+        echo "          bootstrap   - Bootstrap MariaDB cluster"
+        echo "          setup       - Setup a MariaDB Galera cluster"
+        echo "          destroy     - Destroy the cluster sending into a damaged state."
+        echo "          recover     - Recover from a damaged cluster"
+        echo "          clean       - Delete everything from a running cluster"
+        echo "          -h          - Help menu"
         ;;
 esac
