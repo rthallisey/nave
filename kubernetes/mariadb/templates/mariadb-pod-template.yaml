@@ -14,8 +14,25 @@ spec:
     metadata:
       labels:
         service: mariadb-{{count}}
-#      annotations:
-#        pod.alpha.kubernetes.io/initialized: "true"
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+        pod.alpha.kubernetes.io/init-containers: '[
+          {
+             "image": "ansibleapp/nave-centos-mariadb-vessel:latest",
+             "name": "vessel",
+             "imagePullPolicy": "IfNotPresent",
+             "volumeMounts": [
+                 {
+                     "mountPath": "/latest-db",
+                     "name": "mariadb-persistent-storage"
+                 },
+                 {
+                     "mountPath": "/var/log/vessel",
+                     "name": "mariadb-persistent-storage"
+                 }
+             ]
+          }
+        ]'
     spec:
       nodeSelector:
         kubernetes.io/hostname: kube2
