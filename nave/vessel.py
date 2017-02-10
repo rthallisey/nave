@@ -68,6 +68,8 @@ class Vessel(object):
     def service_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/endpoints"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
         m = filter(lambda u : (service in u and 'vessel' not in u),
                    map(lambda v :  v['metadata']['name'], k))
         print "%s Services: %s" %(len(m), m)
@@ -78,8 +80,32 @@ class Vessel(object):
     def pod_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/pods"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
         m = filter(lambda u : (service in u and 'bootstrap' not in u
                                and 'vessel' not in u),
                    map(lambda v :  v['metadata']['name'], k))
         print "%s Pods: %s" %(len(m), m)
         return m
+
+
+    def name_list(self, service):
+        url = self.base_url + "api/v1/namespaces/vessels/pods"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
+        m = filter(lambda u : (service in u[0] and 'bootstrap' not in u[0]
+                               and 'vessel' not in u[0]),
+                   map(lambda v :  (v['metadata']['ownerReferences'][0]['name'],
+                                    v['metadata']['name']), k))
+        print "Names: %s" % m
+        return m
+
+
+    def is_running(self, pod):
+        '''Check if a pod is running'''
+        url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        if k is None:
+            return []
+        return k['status']['phase']

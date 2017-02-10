@@ -20,5 +20,6 @@ class ThirdPartyResource(object):
         self.tpr_data = data
         self.kind = self.tpr_data.get('kind')
         self.vessel_spec = self.tpr_data.get('vesselSpec')
+        self.first_node = self.vessel_spec.get('first_node')
         self.name = self.tpr_data.get('metadata').get('name')
         self.timestamp = self.tpr_data.get('metadata').get('creationTimestamp')

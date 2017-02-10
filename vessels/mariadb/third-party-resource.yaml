@@ -5,3 +5,4 @@ metadata:
   namespace: vessels
 vesselSpec:
   stem: recovery
+  first_node: mariadb-1

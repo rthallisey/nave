@@ -29,6 +29,10 @@ spec:
                  {
                      "mountPath": "/var/log/vessel",
                      "name": "mariadb-persistent-storage"
+                 },
+                 {
+                     "mountPath": "/bootstrap",
+                     "name": "mariadb-persistent-storage"
                  }
              ]
           }

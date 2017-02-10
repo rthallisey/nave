@@ -19,6 +19,7 @@ they happen.  It will be run when the container starts and serves as a daemon.
 
 import argparse
 import json
+import subprocess
 import sys
 
 
@@ -50,7 +51,7 @@ def cluster_event(vessel, service):
        kube_url + "apis/v1/namespaces/default/endpoints/<service>"
 
     Otherwise, we can look at the # of pods and compare that to the number
-    that should be running in the cluster
+    that should be running in the cluster.
 
     Two possible event triggers:
        1) Init container calls to Kubernetes to spawn a vessel
@@ -60,11 +61,19 @@ def cluster_event(vessel, service):
     cluster_size = len(vessel.service_list(service))
 
     print "Checking number of pods in the cluster..."
-    pod_count = len(vessel.pod_list(service))-1
+    pod_count = len(vessel.pod_list(service))+10
 
     # Always trigger a cluster event
     if cluster_size > pod_count:
         return 'missing pod'
+    else:
+        return 'deploy'
+
+
+def failure_event(pod):
+    p = subprocess.Popen(["kubectl", "delete", "pods", pod, "-n", "vessels"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print p.stdout.readlines()
+
 
 def main():
     args = parser()
@@ -85,7 +94,14 @@ def main():
     event = cluster_event(vessel, service)
     pods = vessel.pod_list(service)
     if event is not None:
-        service_vessel.trigger_cluster_event(event, pods)
+        status, pod = service_vessel.trigger_cluster_event(event, pods)
+        if status == 0:
+            print "Cluster is ready for %s. Starting service.."
+            sys.exit(0)
+        else:
+            print "Cluster isn't ready for %s. Restarting pod..." %pod
+            failure_event(pod)
+            sys.exit(1)
 
 if __name__ == '__main__':
     sys.exit(main())
