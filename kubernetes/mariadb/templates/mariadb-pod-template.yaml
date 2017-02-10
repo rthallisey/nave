@@ -20,7 +20,7 @@ spec:
           {
              "image": "ansibleapp/nave-centos-mariadb-vessel:latest",
              "name": "vessel",
-             "imagePullPolicy": "IfNotPresent",
+             "imagePullPolicy": "Always",
              "volumeMounts": [
                  {
                      "mountPath": "/latest-db",
