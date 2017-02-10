@@ -44,12 +44,10 @@ spec:
               name: mariadb-persistent-storage
             - mountPath: /var/log/mariadb
               name: mariadb-persistent-storage
+            - mountPath: /bootstrap
+              name: mariadb-persistent-storage
             - mountPath: /etc/nave
               name: mariadb-config
-            - mountPath: /bootstrap
-              name: bootstrap-args
-            - mountPath: /run_cmd
-              name: run-cmd
           ports:
             - containerPort: 3306
               name: mariadb-{{count}}
@@ -69,9 +67,3 @@ spec:
         - name: mariadb-config
           configMap:
             name: mariadb-{{count}}
-        - name: bootstrap-args
-          configMap:
-            name: bootstrap-args
-        - name: run-cmd
-          configMap:
-            name: run-cmd

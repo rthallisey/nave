@@ -15,9 +15,9 @@ function bootstrap {
     done
 
     ./security_reset.exp
-    mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
-    mysql -u root --password="{{db_password}}" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '{{db_password}}' WITH GRANT OPTION;"
-    mysqladmin -uroot -p"{{db_password}}" shutdown
+    mysql -u root --password="password" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY 'password' WITH GRANT OPTION;"
+    mysql -u root --password="password" -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;"
+    mysqladmin -uroot -p"password" shutdown
 }
 
 mkdir -p /var/lib/mysql

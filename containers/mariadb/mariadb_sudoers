@@ -1,0 +1,3 @@
+root ALL=(ALL) ALL
+
+%mysql ALL=(root) NOPASSWD: /usr/bin/chown mysql\: /var/lib/mysql
