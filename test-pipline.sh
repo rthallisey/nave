@@ -4,7 +4,6 @@ ROOT=$(readlink -f $0)
 BUILD_ROOT=`dirname $ROOT`
 KUBE_ROOT="${BUILD_ROOT}/kubernetes"
 CMD_FILE="${BUILD_ROOT}/kubernetes/mariadb/run-cmd.sh"
-BOOTSTRAP_FILE="${BUILD_ROOT}/kubernetes/mariadb/bootstrap-args.sh"
 
 source "${BUILD_ROOT}/default-config.sh"
 
@@ -30,9 +29,6 @@ function destroy-galera-cluster {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
-
     pods=$(kubectl get pods -o name -n vessels | grep -v bootstrap | cut -d '/' -f 2)
     for pod in ${pods[@]}; do
         kubectl --kubeconfig="${HOME}/.kube/config" delete pods $pod -n vessels
@@ -55,9 +51,6 @@ function recover-galera-cluster {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
-
     (cd "${HOME}/halcyon-vagrant-kubernetes"
         vagrant ssh-config > /tmp/vagrant-ssh
         awk -v RS= '{print > ("/tmp/kube-" NR)}' /tmp/vagrant-ssh
@@ -77,9 +70,6 @@ function recover-galera-cluster {
     echo "Bootstrapping cluster with pod ${newest}"
     kubectl --kubeconfig="${HOME}/.kube/config" delete pods "${newest}" -n vessels
     sleep 20
-
-    kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
 
     pods=$(kubectl get pods -o name -n vessels | grep -v bootstrap | grep -v vessel | grep -v mariadb-"${service_num}" | cut -d '/' -f 2)
     echo "Rejoining the rest of the pods to the cluster"
@@ -102,8 +92,6 @@ function setup-mariadb {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
     for cluster_count in $(seq 1 $CLUSTER_SIZE); do
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-service-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pv-${cluster_count}.yaml"
@@ -113,11 +101,13 @@ function setup-mariadb {
 }
 
 function clean {
-    kubectl --kubeconfig="${HOME}/.kube/config" delete rc mariadb-1 -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" delete rc mariadb-2 -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" delete rc mariadb-3 -n vessels
-    kubectl --kubeconfig="${HOME}/.kube/config" delete rc mariadb-vessel -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" delete job mariadb-bootstrap -n vessels
+    for cluster_count in $(seq 1 $CLUSTER_SIZE); do
+        kubectl --kubeconfig="${HOME}/.kube/config" delete service "mariadb-${cluster_count}" -n vessels
+        kubectl --kubeconfig="${HOME}/.kube/config" delete pv "mariadb-${cluster_count}" -n vessels
+        kubectl --kubeconfig="${HOME}/.kube/config" delete pvc "mariadb-${cluster_count}" -n vessels
+	kubectl --kubeconfig="${HOME}/.kube/config" delete rc "mariadb-${cluster_count}" -n vessels
+    done
 
     (cd "${HOME}/halcyon-vagrant-kubernetes"
         vagrant ssh-config > /tmp/vagrant-ssh
