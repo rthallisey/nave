@@ -12,6 +12,7 @@ source "${BUILD_ROOT}/create-configs.sh"
 CONTAINER_REG="${PROJECT}/${REGISTRY}"
 TAG="${TAG:-latest}"
 
+
 function docker-build-cmd {
     echo "Building container for ${SERVICE}"
     local service="${2:-$SERVICE}"
@@ -31,7 +32,11 @@ function build-templates {
     build-configs
 }
 
-docker-build-cmd "${NAVE_DIR}" "vessel-base"
+function build-common-containers {
+    docker-build-cmd "${NAVE_DIR}" "vessel-base"
+}
+
+build-common-containers
 for SERVICE in "$@"; do
     build-templates
 
