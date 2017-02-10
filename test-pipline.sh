@@ -20,15 +20,6 @@ function replace_sleep {
     sed -i 's/^sleep.*$/runuser mysql -s "\/bin\/bash" -c "mysqld_safe ${BOOTSTRAP_ARGS}"/' "${CMD_FILE}"
 }
 
-function bootstrap-replace {
-    local args="$1"
-    if [[ -z $args ]]; then
-        sed -i 's/^BOOTSTRAP_ARGS.*$/BOOTSTRAP_ARGS=""/' "${BOOTSTRAP_FILE}"
-    else
-        sed -i "s/^BOOTSTRAP_ARGS.*$/BOOTSTRAP_ARGS=\"${args}\"/" "${BOOTSTRAP_FILE}"
-    fi
-}
-
 function corrupt-database {
     echo "Corrupting database"
 }
@@ -39,7 +30,6 @@ function destroy-galera-cluster {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    bootstrap-replace
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
 
@@ -65,7 +55,6 @@ function recover-galera-cluster {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    bootstrap-replace "--wsrep-new-cluster"
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
 
@@ -89,7 +78,6 @@ function recover-galera-cluster {
     kubectl --kubeconfig="${HOME}/.kube/config" delete pods "${newest}" -n vessels
     sleep 20
 
-    bootstrap-replace ""
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
 
@@ -114,7 +102,6 @@ function setup-mariadb {
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "run-cmd" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "run-cmd" --from-file="${CMD_FILE}" -n vessels
 
-    bootstrap-replace "--wsrep-new-cluster"
     kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
     kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
     for cluster_count in $(seq 1 $CLUSTER_SIZE); do
@@ -122,13 +109,6 @@ function setup-mariadb {
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pv-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pvc-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pod-${cluster_count}.yaml"
-        if [[ $cluster_count -eq 1 ]]; then
-            echo "Waiting for Mariadb-1 to start..."
-            sleep 10
-            bootstrap-replace
-            kubectl --kubeconfig="${HOME}/.kube/config" delete configmap "bootstrap-args" -n vessels
-            kubectl --kubeconfig="${HOME}/.kube/config" create configmap "bootstrap-args" --from-file="${BOOTSTRAP_FILE}" -n vessels
-        fi
     done
 }
 
