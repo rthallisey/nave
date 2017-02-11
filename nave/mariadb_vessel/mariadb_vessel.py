@@ -110,12 +110,12 @@ class MariadbVessel(Vessel):
                 print "The first service '%s' has pod '%s'" %(first_node, first_pod)
 
         if first_pod == self.pod:
-            self.replace_bootstrap_cmd(self.empty_bootstrap_cmd, self.new_cluster_cmd)
             print "Starting '%s'" % self.pod
+            self.replace_bootstrap_cmd(self.empty_bootstrap_cmd, self.new_cluster_cmd)
             self.status = 0
         elif self.is_running(first_pod) == 'Running':
-            self.replace_bootstrap_cmd(self.new_cluster_cmd, self.emtpy_bootstrap_cmd)
             print "'%s' is running. Starting '%s'" %(first_node, self.pod)
+            self.replace_bootstrap_cmd(self.new_cluster_cmd, self.empty_bootstrap_cmd)
             self.status = 0
         else:
             self.status = 1

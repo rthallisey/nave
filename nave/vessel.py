@@ -94,10 +94,15 @@ class Vessel(object):
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
         if k is None:
             return []
-        m = filter(lambda u : (service in u[0] and 'bootstrap' not in u[0]
-                               and 'vessel' not in u[0]),
-                   map(lambda v :  (v['metadata']['ownerReferences'][0]['name'],
-                                    v['metadata']['name']), k))
+
+        m = []
+        for item in k:
+            # The bootstrap resource is a job. It does node have the field 'ownerReferences'
+            try:
+                m.append((item['metadata']['ownerReferences'][0]['name'], item['metadata']['name']))
+            except:
+                pass
+
         print "Names: %s" % m
         return m
 
