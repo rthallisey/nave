@@ -66,13 +66,17 @@ function recover-galera-cluster {
 
 function bootstrap-mariadb {
     echo "Bootstrapping up Galera cluster"
+    kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-service-1.yaml"
+    kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pv-1.yaml"
+    kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pvc-1.yaml"
     kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-bootstrap.yaml"
 }
 
 function setup-mariadb {
     echo "Setting up Galera cluster"
 
-    for cluster_count in $(seq 1 $CLUSTER_SIZE); do
+    kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pod-1.yaml"
+    for cluster_count in $(seq 2 $CLUSTER_SIZE); do
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-service-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pv-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pvc-${cluster_count}.yaml"
