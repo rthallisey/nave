@@ -10,107 +10,77 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Base class for a Vessel
+"""Vessel base class"""
 
-Common functions that will serve all Vessels
-"""
-
+import argparse
+import json
 import os
-
 import subprocess
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import sys
 
+from controller import Controller
 from kubernetes import Kubernetes
+from thirdpartyresource import ThirdPartyResource
+
 
 class Vessel(object):
+    def __init__(self, service):
+        self.state = "None"
+        self.identity = "user"
+        self.controller = Controller()
 
-    def __init__(self):
-        # Kubernetes has these environment vars set in every container running
-        # in the cluster
-        self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
-        self.kube_port = os.getenv("KUBERNETES_PORT_443_TCP_PORT")
-        self.base_url = "https://%s:%s/" % (self.kube_endpoint, self.kube_port)
+        self.load_tpr_data(service)
+        self.get_identity()
+        self.get_cluster_state()
 
-        self.kubernetes = Kubernetes()
-        # Disable HTTPS warnings from request
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-    def _kube_client(self, *args):
-        # https://github.com/kubernetes-incubator/client-python
+    def get_identity(self):
+        ''' Determine the identity of the vessel creator
+
+        If HOSTNAME is not set, a user is creating the vessel.
+        '''
+        try:
+            self.identity = os.environ['HOSTNAME']
+        except KeyError:
+            self.identity = "user"
+
+
+    def get_cluster_state(self):
+        '''Get the state of the cluster
+
+        CLUSTER_STATE should only be used when the user creates a vessel.
+        Application triggered events should not care about state.
+
+        If CLUSTER_STATE is not set, look at the cluster and determine the
+        state.
+        '''
+        try:
+            self.state = os.environ['CLUSTER_STATE']
+        except KeyError:
+            self.state = "None"
+
+
+    def load_tpr_data(self, service):
+        self.tpr_data = self.controller._service_vessel_tpr_data(service)
+        self.tpr = ThirdPartyResource(self.tpr_data)
+
+
+    def get_tpr_spec(self):
+        return self.tpr.vessel_spec
+
+
+    def get_tpr_timestamp(self):
+        self.load_tpr_data()
+        return self.tpr.timestamp
+
+
+    def allowed_workflows(self):
+        '''Find the current allowed workflows by the user'''
         pass
 
 
-    def _get_vessel_version(self):
-        # Vessel version endpoint
-        # https://<kube_ip_address>:<port>/apis/nave.vessel/
-
-        url = self.base_url + "apis/nave.vessel"
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-
-
-    def _get_all_vessels(self):
-        # All vessels endpoint
-        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/servicevessels/
-
-        url = self.base_url + "apis/nave.vessel/v1/servicevessels"
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-
-
-    def _service_vessel_tpr_data(self, service):
-        # Specific vessel endpoint
-        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/vessels/servicevessels/mariadb-vessel
-        url = self.base_url + "apis/nave.vessel/v1/namespaces/vessels/" \
-              "servicevessels/%s-vessel" %service
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-
-
-    def service_list(self, service):
-        url = self.base_url + "api/v1/namespaces/vessels/endpoints"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
-        if k is None:
-            return []
-        m = filter(lambda u : (service in u and 'vessel' not in u),
-                   map(lambda v :  v['metadata']['name'], k))
-        print "%s Services: %s" %(len(m), m)
-        self.services = m
-        return m
-
-
-    def pod_list(self, service):
-        url = self.base_url + "api/v1/namespaces/vessels/pods"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
-        if k is None:
-            return []
-        m = filter(lambda u : (service in u and 'bootstrap' not in u
-                               and 'vessel' not in u),
-                   map(lambda v :  v['metadata']['name'], k))
-        print "%s Pods: %s" %(len(m), m)
-        return m
-
-
-    def name_list(self, service):
-        url = self.base_url + "api/v1/namespaces/vessels/pods"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
-        if k is None:
-            return []
-
-        m = []
-        for item in k:
-            # The bootstrap resource is a job. It does node have the field 'ownerReferences'
-            try:
-                m.append((item['metadata']['ownerReferences'][0]['name'], item['metadata']['name']))
-            except:
-                pass
-
-        print "Names: %s" % m
-        return m
-
-
-    def is_running(self, pod):
-        '''Check if a pod is running'''
-        url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-        if k is None:
-            return []
-        return k['status']['phase']
+    def workflow_type(self):
+        '''Find the workflow type the use wants executed
+        For example, the thirdpartyresource could say execute Ansible workflows
+        '''
+        pass

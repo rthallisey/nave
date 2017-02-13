@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,97 +10,108 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Controller
+"""Controller class for Vessels
 
-This script will interact with the Vessel and transfer events to the Vessel as
-they happen.  It will be run when the container starts and serves as a daemon.
+Common functions that will gather information about the cluster
 """
 
-import argparse
-import json
-import subprocess
-import sys
+import os
 
+import subprocess
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 from kubernetes import Kubernetes
-from vessel import Vessel
-from mariadb_vessel.mariadb_vessel import MariadbVessel
+
+class Controller():
+
+    def __init__(self):
+        # Kubernetes has these environment vars set in every container running
+        # in the cluster
+        self.kube_endpoint = os.getenv("KUBERNETES_SERVICE_HOST")
+        self.kube_port = os.getenv("KUBERNETES_PORT_443_TCP_PORT")
+        self.base_url = "https://%s:%s/" % (self.kube_endpoint, self.kube_port)
+
+        self.kubernetes = Kubernetes()
+        # Disable HTTPS warnings from request
+        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
+    def _kube_client(self, *args):
+        # Consider using the kubernetes python client
+        # https://github.com/kubernetes-incubator/client-python
+        pass
 
 
-def parser():
-    parser = argparse.ArgumentParser(description='Vessel Client.')
+    def _get_vessel_version(self):
+        # Vessel version endpoint
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/
 
-    parser.add_argument("vessel",
-                        help='Input which vessel to spawn')
-    return parser.parse_args()
-
-
-def cluster_event(vessel, service):
-    """ Cluster event
-
-    When a container that's managed by a vessel starts, it will use an
-    init container to reach out to the vessel to see if it's ok to start.
-
-    The vessel is aware of the cluster size.
-
-    Any complex or stateful application will require each service to have its
-    own service endpoint.  Therefore, the number of active services in the
-    cluster equals the number of service endpoints.
-
-       kube_url + "apis/v1/namespaces/default/endpoints/<service>"
-
-    Otherwise, we can look at the # of pods and compare that to the number
-    that should be running in the cluster.
-
-    Two possible event triggers:
-       1) Init container calls to Kubernetes to spawn a vessel
-       2) User creates a vessel
-    """
-    print "Checking cluster size..."
-    cluster_size = len(vessel.service_list(service))
-
-    print "Checking number of pods in the cluster..."
-    pod_count = len(vessel.pod_list(service))+10
-
-    # Always trigger a cluster event
-    if cluster_size > pod_count:
-        return 'missing pod'
-    else:
-        return 'deploy'
+        url = self.base_url + "apis/nave.vessel"
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
 
-def failure_event(pod):
-    p = subprocess.Popen(["kubectl", "delete", "pods", pod, "-n", "vessels"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print p.stdout.readlines()
+    def _get_all_vessels(self):
+        # All vessels endpoint
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/servicevessels/
+
+        url = self.base_url + "apis/nave.vessel/v1/servicevessels"
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
 
-def main():
-    args = parser()
-    service = args.vessel
+    def _service_vessel_tpr_data(self, service):
+        # Specific vessel endpoint
+        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/vessels/servicevessels/mariadb-vessel
+        url = self.base_url + "apis/nave.vessel/v1/namespaces/vessels/" \
+              "servicevessels/%s-vessel" %service
+        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
-    vessel = Vessel()
-    kubernetes = Kubernetes()
-    token = kubernetes.token
-    vessel_dict = {'mariadb': MariadbVessel()}
-    service_vessel = vessel_dict.get(service)
 
-    print "Using ThirdPartyResource with spec: %s" %service_vessel.get_tpr_spec()
-    print "Using ThirdPartyResource from: %s" % service_vessel.get_timestamp()
+    def service_list(self, service):
+        url = self.base_url + "api/v1/namespaces/vessels/endpoints"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
+        m = filter(lambda u : (service in u and 'vessel' not in u),
+                   map(lambda v :  v['metadata']['name'], k))
+        print "%s Services: %s" %(len(m), m)
+        self.services = m
+        return m
 
-    service_vessel.load_tpr_data()
 
-    # check if an event occured in the cluster
-    event = cluster_event(vessel, service)
-    pods = vessel.pod_list(service)
-    if event is not None:
-        status, pod = service_vessel.trigger_cluster_event(event, pods)
-        if status == 0:
-            print "Cluster is ready for %s. Starting service.."
-            sys.exit(0)
-        else:
-            print "Cluster isn't ready for %s. Restarting pod..." %pod
-            failure_event(pod)
-            sys.exit(1)
+    def pod_list(self, service):
+        url = self.base_url + "api/v1/namespaces/vessels/pods"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
+        m = filter(lambda u : (service in u and 'bootstrap' not in u
+                               and 'vessel' not in u),
+                   map(lambda v :  v['metadata']['name'], k))
+        print "%s Pods: %s" %(len(m), m)
+        return m
 
-if __name__ == '__main__':
-    sys.exit(main())
+
+    def name_list(self, service):
+        url = self.base_url + "api/v1/namespaces/vessels/pods"
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        if k is None:
+            return []
+
+        m = []
+        for item in k:
+            # The bootstrap resource is a job. It does node have the field 'ownerReferences'
+            try:
+                m.append((item['metadata']['ownerReferences'][0]['name'], item['metadata']['name']))
+            except:
+                pass
+
+        print "Names: %s" % m
+        return m
+
+
+    def is_running(self, pod):
+        '''Check if a pod is running'''
+        url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        if k is None:
+            return None
+        return k['status']['phase']
