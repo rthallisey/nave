@@ -40,11 +40,11 @@ class MariadbVessel(Vessel):
     def __init__(self):
         super(MariadbVessel, self).__init__('mariadb')
         self.lifecycle_actions = ['deploy', 'recovery']
-        self.failure = False
         self.empty_bootstrap_cmd = 'BOOTSTRAP_ARGS=""'
         self.new_cluster_cmd = 'BOOTSTRAP_ARGS="--wsrep-new-cluster"'
         self.event = ClusterEvent()
         self.local_owner = self.controller.get_owner(self.identity)
+        self.owner_list = self.controller.owner_list('mariadb')
 
 
     def _mariadb_lights_out_recovery(self):
@@ -52,7 +52,6 @@ class MariadbVessel(Vessel):
         seqno = -1000
         newest_owner = None
         newest_pod = None
-        owner_list = self.controller.owner_list('mariadb')
 
         print "Sharing local grastate.dat with the cluster"
         # Share local grastate.dat with the cluster
@@ -61,7 +60,7 @@ class MariadbVessel(Vessel):
         with open('/vessel-shared/grastate-%s' %self.local_owner, 'w') as f:
             f.write(grastate)
 
-        for owner, pod in owner_list:
+        for owner, pod in self.owner_list:
             print pod
 
             try:
@@ -69,8 +68,7 @@ class MariadbVessel(Vessel):
                 with open('/vessel-shared/grastate-' + owner, 'r') as f:
                     info = f.readlines()
             except IOError:
-                self.failure = True
-                return
+                return True
 
             for item in info:
                 if "seqno" in item:
@@ -97,25 +95,23 @@ class MariadbVessel(Vessel):
             # Replace safe_to_bootstrap
             with open('/var/lib/mysql/grastate.dat', 'w') as t:
                 t.write(info.replace('safe_to_bootstrap: 0', 'safe_to_bootstrap: 1'))
-            self.failure = False
+            return False
         elif self.controller.is_running(newest_pod):
             print "The newest database is running in pod '%s'. Starting '%s'" %(newest_pod, self.local_owner)
-            self.failure = False
+            return False
         else:
             print "The newest database in pod '%s' hasn't started yet. Restarting." % newest_pod
-            self.failure = True
+            return False
 
 
     def _mariadb_deploy(self):
         """Workflow for deploying mariadb"""
-        # Returns ['name', 'pod_name']
-        owner_list = self.controller.owner_list('mariadb')
         first_node = self.tpr.first_node
         first_pod = None
 
         print "Looking for '%s' to start first" % first_node
 
-        for n in owner_list:
+        for n in self.owner_list:
             if n[0] == first_node:
                 first_pod = n[1]
                 print "The first service '%s' has the pod name: '%s'" %(first_node, first_pod)
@@ -123,14 +119,13 @@ class MariadbVessel(Vessel):
         if first_pod == self.identity:
             self.replace_bootstrap_cmd(self.empty_bootstrap_cmd, self.new_cluster_cmd)
             print "Starting '%s'" % self.identity
-            self.failure = False
+            return False
         elif self.controller.is_running(first_pod) == 'Running':
             self.replace_bootstrap_cmd(self.new_cluster_cmd, self.empty_bootstrap_cmd)
             print "'%s' is running. Starting '%s'" %(first_node, self.identity)
-            self.failure = False
+            return False
         else:
-            self.failure = True
-
+            return True
 
     def replace_bootstrap_cmd(self, old_cmd, new_cmd):
         print "Replacing bootstrap_cmd %s with %s" %(old_cmd, new_cmd)
@@ -156,16 +151,22 @@ class MariadbVessel(Vessel):
 
         event = self.event.get_recent_event()
         if event is None:
-            print "Deploying Mariadb"
-            self._mariadb_deploy()
+            #TODO: Make error handling more obvious
+            # if something returns true, that doesn't usually mean it failed..
+            if self._mariadb_deploy():
+                return True
             self.event.cluster_event('deploy')
+            return False
         elif running_pods == 0:
             print "Mariadb Lights Out Recovery"
-            self._mariadb_lights_out_recovery()
+            if self._mariadb_lights_out_recovery():
+                return True
             self.event.cluster_event('lights-out-recovery')
+            return False
         elif cluster_size < pod_list:
             print "Scaling MariaDB cluster"
-            self._mariadb_deploy()
+            if self._mariadb_deploy():
+                return True
             self.event.cluster_event('scale')
 
 
@@ -176,8 +177,9 @@ def main():
     # self.load_tpr_data()
 
     vessel = MariadbVessel()
-    vessel.cluster_status()
-
+    failure = vessel.cluster_status()
+    if failure:
+        sys.exit(1)
 
 if __name__ == '__main__':
     sys.exit(main())
