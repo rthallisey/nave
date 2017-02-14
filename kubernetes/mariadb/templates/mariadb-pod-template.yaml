@@ -23,11 +23,11 @@ spec:
              "imagePullPolicy": "Always",
              "volumeMounts": [
                  {
-                     "mountPath": "/latest-db",
+                     "mountPath": "/state",
                      "name": "mariadb-persistent-storage"
                  },
                  {
-                     "mountPath": "/state",
+                     "mountPath": "/var/lib/mysql",
                      "name": "mariadb-persistent-storage"
                  },
                  {
@@ -37,6 +37,10 @@ spec:
                  {
                      "mountPath": "/bootstrap",
                      "name": "mariadb-persistent-storage"
+                 },
+                 {
+                     "mountPath": "/vessel-shared",
+                     "name": "vessel-shared-storage"
                  }
              ]
           }
@@ -72,6 +76,9 @@ spec:
         - name: mariadb-persistent-storage
           persistentVolumeClaim:
             claimName: mariadb-{{count}}
+        - name: vessel-shared-storage
+          persistentVolumeClaim:
+            claimName: vessel-shared
         - name: mariadb-config
           configMap:
             name: mariadb-{{count}}

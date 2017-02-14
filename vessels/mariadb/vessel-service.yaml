@@ -55,3 +55,28 @@ spec:
   resources:
     requests:
       storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vessel-shared
+  namespace: vessels
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  hostPath:
+    path: /var/lib/nave/vessel-shared
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vessel-shared
+  namespace: vessels
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

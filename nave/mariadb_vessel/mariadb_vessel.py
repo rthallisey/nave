@@ -48,73 +48,85 @@ class MariadbVessel(Vessel):
 
     def _mariadb_lights_out_recovery(self):
         """Workflow for recovering mariadb"""
-
-        pods = self.controller.pod_list('mariadb')
-        print 'Active MariaDB pods in the cluster: %s' % pods
-
         seqno = -1000
+        newest_owner = None
         newest_pod = None
-        for pod in pods:
+        owner_list = self.controller.owner_list('mariadb')
+        local_owner = self.controller.get_owner(self.identity)
+
+        print "Sharing local grastate.dat with the cluster"
+        # Share local grastate.dat with the cluster
+        with open('/var/lib/mysql/grastate.dat', 'r') as t:
+            grastate = t.read()
+        with open('/vessel-shared/grastate-%s' %local_owner, 'w') as f:
+            f.write(grastate)
+
+        for owner, pod in owner_list:
             print pod
 
-            # Read all volumes that hold /var/lib/mysql/grastate.dat
-            p = subprocess.Popen(["kubectl", "exec", pod, "cat",
-                                      "/var/lib/mysql/grastate.dat"],
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
-            err = p.stderr.readlines()
-            if len(err) != 0:
-                print err
+            try:
+                # Read stored files in vessel-shared to see different states of the cluster
+                with open('/vessel-shared/grastate-' + owner, 'r') as f:
+                    info = f.readlines()
+            except IOError:
                 self.failure = True
+                return
 
-            output = p.stdout.readlines()
-            if len(output) == 0:
-                self.failure = True
-            else:
-                for item in output:
-                    if "seqno" in item:
-                        output = item
-                        print output
+            for item in info:
+                if "seqno" in item:
+                    output = item
+                    print output
 
-                output = int(output.split(":")[1])
-                # Look for the highest positive value
-                if (output >= seqno):
-                    seqno = output
-                    newest_pod = pod
+                    output = int(output.split(":")[1])
+                    # Look for the highest positive value
+                    if (output >= seqno):
+                        seqno = output
+                        newest_owner = owner
+                        newest_pod = pod
 
         # Run mysql start --wsrep-new-cluster on the highest seqno
-        print "Newest pod and seqno number"
-        print "newest database: %s" %newest_pod
+        print "Newest owner and seqno number"
+        print "newest database: %s" %newest_owner
         print "seqno: %i" %seqno
-        try:
-            with open('/latest-db/newest-db', 'w') as f:
-                f.write(newest_pod+"\n")
-        except:
-            pass
+
+        if local_owner is newest_owner:
+            print "Starting '%s' first" % local_owner
+            with open('/var/lib/mysql/grastate.dat', 'r') as f:
+                info = f.readlines()
+
+            # Replace safe_to_bootstrap
+            with open('/var/lib/mysql/grastate.dat', 'w') as t:
+                t.write(info.replace('safe_to_bootstrap: 0', 'safe_to_bootstrap: 1'))
+            self.failure = False
+        elif self.controller.is_running(newest_pod):
+            print "The newest database is running in pod '%s'. Starting '%s'" %(newest_pod, local_owner)
+            self.failure = False
+        else:
+            print "The newest database in pod '%s' hasn't started yet. Restarting." % newest_pod
+            self.failure = True
 
 
     def _mariadb_deploy(self):
         """Workflow for deploying mariadb"""
         # Returns ['name', 'pod_name']
-        name_list = self.controller.name_list('mariadb')
+        owner_list = self.controller.owner_list('mariadb')
         first_node = self.tpr.first_node
         first_pod = None
 
-        print "Name_list %s" % name_list
         print "Looking for '%s' to start first" % first_node
 
-        for n in name_list:
+        for n in owner_list:
             if n[0] == first_node:
                 first_pod = n[1]
                 print "The first service '%s' has the pod name: '%s'" %(first_node, first_pod)
 
         if first_pod == self.identity:
-            print "Starting '%s'" % self.identity
             self.replace_bootstrap_cmd(self.empty_bootstrap_cmd, self.new_cluster_cmd)
+            print "Starting '%s'" % self.identity
             self.failure = False
         elif self.controller.is_running(first_pod) == 'Running':
-            print "'%s' is running. Starting '%s'" %(first_node, self.identity)
             self.replace_bootstrap_cmd(self.new_cluster_cmd, self.empty_bootstrap_cmd)
+            print "'%s' is running. Starting '%s'" %(first_node, self.identity)
             self.failure = False
         else:
             self.failure = True
@@ -150,7 +162,7 @@ class MariadbVessel(Vessel):
         elif running_pods == 0:
             print "Mariadb Lights Out Recovery"
             self._mariadb_lights_out_recovery()
-            self.event.cluster_event('lights out recovery')
+            self.event.cluster_event('lights-out-recovery')
         elif cluster_size < pod_list:
             print "Scaling MariaDB cluster"
             self._mariadb_deploy()

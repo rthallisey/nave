@@ -90,7 +90,7 @@ class Controller():
         return m
 
 
-    def name_list(self, service):
+    def owner_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/pods"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
         if k is None:
@@ -104,7 +104,18 @@ class Controller():
             except:
                 pass
 
-        print "Names: %s" % m
+        print "Owners: %s" % m
+        return m
+
+
+    def get_owner(self, pod):
+        url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
+        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        if k is None:
+            return None
+
+        m = k['metadata']['ownerReferences'][0]['name']
+        print "Owner: %s" % m
         return m
 
 

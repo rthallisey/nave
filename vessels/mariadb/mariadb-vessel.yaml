@@ -31,11 +31,14 @@ spec:
             - containerPort: 6443
               name: kube-1
           volumeMounts:
-            - mountPath: /latest-db
-              name: vessel-persistent-storage
             - mountPath: /var/log/vessel
               name: vessel-persistent-storage
+            - mountPath: /var/lib/vessel-shared
+              name: vessel-shared-storage
       volumes:
         - name: vessel-persistent-storage
           persistentVolumeClaim:
             claimName: mariadb-vessel
+        - name: vessel-shared-storage
+          persistentVolumeClaim:
+            claimName: vessel-shared
