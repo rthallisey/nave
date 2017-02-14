@@ -44,6 +44,7 @@ class MariadbVessel(Vessel):
         self.empty_bootstrap_cmd = 'BOOTSTRAP_ARGS=""'
         self.new_cluster_cmd = 'BOOTSTRAP_ARGS="--wsrep-new-cluster"'
         self.event = ClusterEvent()
+        self.local_owner = self.controller.get_owner(self.identity)
 
 
     def _mariadb_lights_out_recovery(self):
@@ -52,13 +53,12 @@ class MariadbVessel(Vessel):
         newest_owner = None
         newest_pod = None
         owner_list = self.controller.owner_list('mariadb')
-        local_owner = self.controller.get_owner(self.identity)
 
         print "Sharing local grastate.dat with the cluster"
         # Share local grastate.dat with the cluster
         with open('/var/lib/mysql/grastate.dat', 'r') as t:
             grastate = t.read()
-        with open('/vessel-shared/grastate-%s' %local_owner, 'w') as f:
+        with open('/vessel-shared/grastate-%s' %self.local_owner, 'w') as f:
             f.write(grastate)
 
         for owner, pod in owner_list:
@@ -89,8 +89,8 @@ class MariadbVessel(Vessel):
         print "newest database: %s" %newest_owner
         print "seqno: %i" %seqno
 
-        if local_owner is newest_owner:
-            print "Starting '%s' first" % local_owner
+        if self.local_owner is newest_owner:
+            print "Starting '%s' first" % self.local_owner
             with open('/var/lib/mysql/grastate.dat', 'r') as f:
                 info = f.readlines()
 
@@ -99,7 +99,7 @@ class MariadbVessel(Vessel):
                 t.write(info.replace('safe_to_bootstrap: 0', 'safe_to_bootstrap: 1'))
             self.failure = False
         elif self.controller.is_running(newest_pod):
-            print "The newest database is running in pod '%s'. Starting '%s'" %(newest_pod, local_owner)
+            print "The newest database is running in pod '%s'. Starting '%s'" %(newest_pod, self.local_owner)
             self.failure = False
         else:
             print "The newest database in pod '%s' hasn't started yet. Restarting." % newest_pod
