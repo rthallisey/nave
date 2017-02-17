@@ -14,8 +14,21 @@ function corrupt-database {
     echo "Corrupting database"
 }
 
+function damage_data {
+    (cd "${HOME}/halcyon-vagrant-kubernetes"
+        rand_node=$(( ( RANDOM % 3 )  + 1 ))
+        rand_num=$(( ( RANDOM % 7 )  + 1 ))
+        ssh -F /tmp/kube-2 vagrant@kube2 "sudo sed -i 's/^seqno:.*/seqno:   ${rand_num}/' /var/lib/nave/mariadb-${rand_node}/grastate.dat"
+    )
+}
+
 function destroy-galera-cluster {
     echo "Destroying Galera cluster"
+
+    if [[ "${!DAMAGE_DATA[@]}" ]]; then
+        damage_data
+    fi
+
     pods=$(kubectl get pods -o name -n vessels | grep -v bootstrap | cut -d '/' -f 2)
     for pod in ${pods[@]}; do
         kubectl --kubeconfig="${HOME}/.kube/config" delete pods $pod -n vessels
@@ -23,16 +36,12 @@ function destroy-galera-cluster {
 }
 
 function recover-galera-cluster {
-    # Replaced by init containers calling the vessel
+    # User running a vessel recovery
     echo "Recovering Galera cluster"
 
     # Vessel will find newest DB
     kubectl --kubeconfig="${HOME}/.kube/config" create -f "${BUILD_ROOT}/vessels/mariadb/mariadb-vessel.yaml"
 
-    sleep 20
-    vessel=$(kubectl get pods -o name -n vessels | grep "vessel" | cut -d '/' -f 2)
-    echo $vessel
-    kubectl --kubeconfig="${HOME}/.kube/config" logs $vessel -n vessels
 
     (cd "${HOME}/halcyon-vagrant-kubernetes"
         vagrant ssh-config > /tmp/vagrant-ssh
@@ -75,8 +84,7 @@ function bootstrap-mariadb {
 function setup-mariadb {
     echo "Setting up Galera cluster"
 
-    kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pod-1.yaml"
-    for cluster_count in $(seq 2 $CLUSTER_SIZE); do
+    for cluster_count in $(seq 1 $CLUSTER_SIZE); do
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-service-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pv-${cluster_count}.yaml"
         kubectl --kubeconfig="${HOME}/.kube/config" create -f "${KUBE_ROOT}/mariadb/mariadb-pvc-${cluster_count}.yaml"
@@ -99,6 +107,12 @@ function clean {
         ssh -F /tmp/kube-2 vagrant@kube2 "sudo rm -rf /var/lib/nave/*"
     )
 }
+
+case "$2" in
+    '--damage-data' )
+        DAMAGE_DATA=''
+        ;;
+esac
 
 case "$1" in
     'setup' )
