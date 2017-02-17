@@ -44,7 +44,22 @@ class MariadbVessel(Vessel):
         self.new_cluster_cmd = 'BOOTSTRAP_ARGS="--wsrep-new-cluster"'
         self.event = ClusterEvent()
         self.local_owner = self.controller.get_owner(self.identity)
-        self.owner_list = self.controller.owner_list('mariadb')
+
+        # hack
+        # self.owner_list = self.controller.owner_list('mariadb')
+        new_pods = self.hack_for_running_pods()
+        owner_list = self.controller.owner_list('mariadb')
+        self.owner_list = filter(lambda v: v[1] in new_pods, owner_list)
+
+
+    def hack_for_running_pods(self):
+        pod_list = []
+        with open('/hack-pods', 'r') as t:
+            p = t.readlines()
+        for line in p:
+            pod_list.append(line.strip('\n'))
+
+        return pod_list
 
 
     def _mariadb_lights_out_recovery(self):
@@ -61,7 +76,7 @@ class MariadbVessel(Vessel):
             f.write(grastate)
 
         for owner, pod in self.owner_list:
-            print pod
+            print owner
 
             try:
                 # Read stored files in vessel-shared to see different states of the cluster
@@ -87,14 +102,13 @@ class MariadbVessel(Vessel):
         print "newest database: %s" %newest_owner
         print "seqno: %i" %seqno
 
-        if self.local_owner is newest_owner:
+        if self.local_owner == newest_owner:
             print "Starting '%s' first" % self.local_owner
             with open('/var/lib/mysql/grastate.dat', 'r') as f:
                 info = f.readlines()
 
             # Replace safe_to_bootstrap
-            with open('/var/lib/mysql/grastate.dat', 'w') as t:
-                t.write(info.replace('safe_to_bootstrap: 0', 'safe_to_bootstrap: 1'))
+            self.replace_safe_to_bootstrap('0', '1')
             return False
         elif self.controller.is_running(newest_pod):
             print "The newest database is running in pod '%s'. Starting '%s'" %(newest_pod, self.local_owner)
@@ -137,12 +151,29 @@ class MariadbVessel(Vessel):
             f.write(new_cmd)
 
 
+    def replace_safe_to_bootstrap(self, old_cmd, new_cmd):
+        print "Replacing safe_to_bootstrap: %s with %s" %(old_cmd, new_cmd)
+        base_cmd = 'safe_to_boostrap:'
+        with open('/var/lib/mysql/grastate.dat', 'r') as f:
+            output = f.read()
+
+        with open('/var/lib/mysql/grastate.dat', 'w') as f:
+            new_cmd = output.replace('%s %s' %(base_cmd, old_cmd),
+                                     '%s %s' %(base_cmd, new_cmd))
+            f.write(new_cmd)
+
+
     def cluster_status(self):
+        # Reset safe_to_bootstrap
+        self.replace_safe_to_bootstrap('1', '0')
+
         print "Checking cluster size..."
         cluster_size = len(self.controller.service_list('mariadb'))
 
         print "Checking number of pods in the cluster..."
-        pod_list = self.controller.pod_list('mariadb')
+        pod_list = self.hack_for_running_pods()
+        print '%s Pods: %s' % (len(pod_list), pod_list)
+        # pod_list = self.controller.pod_list('mariadb')
 
         running_pods = 0
         for p in pod_list:
