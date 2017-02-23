@@ -58,14 +58,6 @@ class Controller():
         return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
 
 
-    def _service_vessel_tpr_data(self, service):
-        # Specific vessel endpoint
-        # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/namespaces/vessels/servicevessels/mariadb-vessel
-        url = self.base_url + "apis/nave.vessel/v1/namespaces/vessels/" \
-              "servicevessels/%s-vessel" %service
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
-
-
     def service_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/endpoints"
         k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']

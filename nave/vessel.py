@@ -61,8 +61,10 @@ class Vessel(object):
 
 
     def load_tpr_data(self, service):
-        self.tpr_data = self.controller._service_vessel_tpr_data(service)
-        self.tpr = ThirdPartyResource(self.tpr_data)
+        url = self.controller.base_url + "apis/nave.vessel/v1/namespaces/vessels/" \
+              "servicevessels/%s-vessel" %service
+        self.tpr = ThirdPartyResource(url)
+        self.tpr_data = self.tpr.get_data()
 
 
     def get_tpr_spec(self):
@@ -70,7 +72,6 @@ class Vessel(object):
 
 
     def get_tpr_timestamp(self):
-        self.load_tpr_data()
         return self.tpr.timestamp
 
 
