@@ -31,4 +31,6 @@ class Kubernetes():
         return token[0]
 
     def contact_kube_endpoint(self, url, headers=None, verify=False):
+        if headers is None:
+            headers = self.header
         return requests.get(url, headers=headers, verify=verify).json()

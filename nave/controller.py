@@ -47,7 +47,7 @@ class Controller():
         # https://<kube_ip_address>:<port>/apis/nave.vessel/
 
         url = self.base_url + "apis/nave.vessel"
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        return self.kubernetes.contact_kube_endpoint(url)
 
 
     def _get_all_vessels(self):
@@ -55,12 +55,12 @@ class Controller():
         # https://<kube_ip_address>:<port>/apis/nave.vessel/v1/servicevessels/
 
         url = self.base_url + "apis/nave.vessel/v1/servicevessels"
-        return self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        return self.kubernetes.contact_kube_endpoint(url)
 
 
     def service_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/endpoints"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        k = self.kubernetes.contact_kube_endpoint(url)['items']
         if k is None:
             return []
         m = filter(lambda u : (service in u and 'vessel' not in u),
@@ -72,7 +72,7 @@ class Controller():
 
     def pod_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/pods"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        k = self.kubernetes.contact_kube_endpoint(url)['items']
         if k is None:
             return []
         m = filter(lambda u : (service in u and 'bootstrap' not in u
@@ -84,7 +84,7 @@ class Controller():
 
     def owner_list(self, service):
         url = self.base_url + "api/v1/namespaces/vessels/pods"
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)['items']
+        k = self.kubernetes.contact_kube_endpoint(url)['items']
         if k is None:
             return []
 
@@ -102,7 +102,7 @@ class Controller():
 
     def get_owner(self, pod):
         url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        k = self.kubernetes.contact_kube_endpoint(url)
         if k is None:
             return None
 
@@ -114,7 +114,7 @@ class Controller():
     def is_running(self, pod):
         '''Check if a pod is running'''
         url = self.base_url + "api/v1/namespaces/vessels/pods/" + pod
-        k = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        k = self.kubernetes.contact_kube_endpoint(url)
         if k is None:
             return None
         return k['status']['phase']

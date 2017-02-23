@@ -29,4 +29,4 @@ class ThirdPartyResource(object):
 
     def _read_tpr_data(url):
         url = url + "?watch=true"
-        self.tpr_data = self.kubernetes.contact_kube_endpoint(url, self.kubernetes.header)
+        self.tpr_data = self.kubernetes.contact_kube_endpoint(url)
